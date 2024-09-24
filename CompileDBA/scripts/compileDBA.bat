@@ -1,0 +1,1 @@
+@start java -jar CompileDBA-0.0.1-SNAPSHOT.jar

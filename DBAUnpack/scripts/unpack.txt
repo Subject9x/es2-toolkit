@@ -1,0 +1,7 @@
+//Dynamix Bitmap Array unpacker
+//ThreeSpace 2.0 / Earthsiege 2 version.
+//
+// please end paths with ending slash.
+dba_file=<file path and name of DBA>
+dbm_dir=<directory path to export to>
+palette=<optional .DPL file to generate colorized .png's>
