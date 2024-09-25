@@ -5,11 +5,12 @@
 	<parent>
 		<groupId>org.hercworks</groupId>
 		<artifactId>es2kit</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
+		<version>0.1.0</version>
 	</parent>
 	<artifactId>CompileDBA</artifactId>
 	<name>CompileDBA</name>
 	<description>Compile an existing list of DBM (Dynamix BitMap) files to a DBA(Dynamix Bitmap Array)</description>
+ 	<version>0.0.1</version>
 
 	<dependencies>
 		<dependency>
@@ -17,6 +18,7 @@
 		    <groupId>at.favre.lib</groupId>
 		    <artifactId>bytes</artifactId>
 		    <version>1.6.1</version>
+		    <scope>compile</scope>
 		</dependency>
 		
 		<dependency>
@@ -39,4 +41,109 @@
 			</exclusions>
 		</dependency>
 	</dependencies>
+		<build>
+		<plugins>
+			<!-- clean lifecycle, see
+			https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+			</plugin>
+			<!-- default lifecycle, jar packaging: see
+			https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging -->
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+		        <version>3.3.1</version>
+		        <executions>
+					<execution>
+						<phase>generate-test-resources</phase>
+						<configuration>
+					<outputDirectory>${basedir}/target/classes</outputDirectory>
+					<resources>
+					</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+			    <groupId>org.apache.maven.plugins</groupId>
+			    <artifactId>maven-dependency-plugin</artifactId>
+			    <executions>
+			        <execution>
+			            <id>copy-dependencies</id>
+			            <phase>prepare-package</phase>
+			            <goals>
+			                <goal>copy-dependencies</goal>
+			            </goals>
+			            <configuration>
+			                <outputDirectory>
+			                    ${project.build.directory}/libs
+			                </outputDirectory>
+			            </configuration>
+			        </execution>
+			    </executions>
+			</plugin>
+			
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.11.0</version>
+				<configuration>
+					<source>${jdk.version}</source>
+					<target>${jdk.version}</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<artifactId>maven-install-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<artifactId>maven-deploy-plugin</artifactId>
+			</plugin>
+			<!-- site lifecycle, see
+			https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle -->
+			<plugin>
+				<artifactId>maven-site-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<artifactId>maven-project-info-reports-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.4.1</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<filters>
+								<filter>
+									<artifact>*:*</artifact>
+									<excludes>
+										<!-- <exclude>META-INF/*.MF</exclude> -->
+										<exclude>META-INF/*.SF</exclude>
+										<exclude>META-INF/*.DSA</exclude>
+										<exclude>META-INF/*.RSA</exclude>
+									</excludes>
+								</filter>
+							</filters>
+							<transformers>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<mainClass>
+										org.hercworks.compdba.CompileDBA</mainClass>
+								</transformer>
+							</transformers>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 </project>

@@ -1,4 +1,4 @@
-package org.hercworks.exp.dba;
+package org.es2tlk.dba;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -15,6 +15,7 @@ import org.hercworks.core.data.file.dyn.DynamixPalette;
 import org.hercworks.core.io.transform.common.DynamixBitmapArrayTransformer;
 import org.hercworks.core.io.transform.common.DynamixBitmapTransformer;
 import org.hercworks.core.io.transform.common.DynamixPaletteTransformer;
+import org.hercworks.core.io.write.DynFileWriter;
 import org.hercworks.voln.FileType;
 
 public class UnpackDBA {
@@ -117,19 +118,18 @@ public class UnpackDBA {
 			}
 		}
 		
+		DynamixPalette dpl = null;
 		if(dplFilePath != null && dplFilePath.length() != 0) {
 			File dplFile = new File(dplFilePath);
 			if(!dplFile.exists()) {
 				System.out.println("--->Warn! DPL file [" + dplFilePath + "] doesn't exist, skipping.");
-				
-				
 			}
 			else {
 				FileInputStream readDplFile;
 				try {
 					readDplFile = new  FileInputStream(dplFile);
 					DynamixPaletteTransformer dplTransform = new DynamixPaletteTransformer();
-					DynamixPalette dpl = (DynamixPalette) dplTransform.bytesToObject(readDplFile.readAllBytes());
+					dpl = (DynamixPalette) dplTransform.bytesToObject(readDplFile.readAllBytes());
 					readDplFile.close();
 					
 					if(dpl != null && dpl.getRawBytes().length > 0){
@@ -137,15 +137,16 @@ public class UnpackDBA {
 					}
 				} catch (FileNotFoundException e) {
 					dplLoaded = false;
-					System.out.println("--->Warn!");
+					System.out.println("--->Warn! ");
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
-			
 		}
-		
+		if(dpl == null) {
+			dplLoaded = false;
+		}
 		
 		String dbaName = dbaFilePath.toLowerCase().substring(dbaFilePath.lastIndexOf('/')+1, dbaFilePath.toLowerCase().lastIndexOf("."+FileType.DBA.val()));
 		int frameCount = 0;
@@ -164,8 +165,12 @@ public class UnpackDBA {
 			}
 			
 			for(DynamixBitmap dbm : dba.getImages()) {
-				String path = dbmOutputDir + File.separator + dbaName + "_" + frameCount + "." + FileType.DBM.val();
-				File dbmFile = new File(path);
+				dbm.setFileName(dbaName + "_" + frameCount);
+				
+				String path = dbmOutputDir + File.separator;
+				String dbmPath = path + dbm.getFileName().toUpperCase() + "." + FileType.DBM.val().toUpperCase();
+				
+				File dbmFile = new File(dbmPath);
 				FileOutputStream fileOut = new FileOutputStream(dbmFile);
 				
 				DynamixBitmapTransformer dbmTransform = new DynamixBitmapTransformer();
@@ -173,6 +178,11 @@ public class UnpackDBA {
 				fileOut.write(dbmTransform.objectToBytes(dbm));
 				fileOut.close();
 				System.out.println(path);
+				
+				if(dplLoaded) {
+					DynFileWriter.writeDBMToFile(dbm, dpl, path);
+				}
+				
 				frameCount++;
 			}
 		} catch (Exception e) {

@@ -1,4 +1,4 @@
-package org.hercworks.compdba;
+package org.es2tlk.dba;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -118,7 +118,7 @@ public class CompileDBA {
 			for (String s : fileEntries) {
 				File dbmFile = new File(dbmDir + "/" + s);
 				if (dbmFile.exists()) {
-					System.out.println("loading dbm=" + dbmFile.getPath());
+					//System.out.print("loading dbm=" + dbmFile.getPath());
 					FileInputStream fizz = new FileInputStream(dbmFile);
 					
 					DynamixBitmap dbm = (DynamixBitmap) transform.bytesToObject(fizz.readAllBytes());
