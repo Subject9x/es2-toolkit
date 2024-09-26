@@ -15,7 +15,6 @@ import javax.imageio.ImageIO;
 
 import org.hercworks.core.data.file.dyn.DynamixBitmap;
 import org.hercworks.core.data.file.dyn.DynamixPalette;
-import org.hercworks.core.data.struct.ColorBytes;
 import org.hercworks.core.io.transform.common.DynamixBitmapTransformer;
 import org.hercworks.core.io.transform.common.DynamixPaletteTransformer;
 import org.hercworks.voln.FileType;
@@ -138,19 +137,19 @@ public class ConverToDBM {
 					FileOutputStream fos = new FileOutputStream(writeDBM);
 					fos.write(dbmTransform.objectToBytes(dbm));
 					fos.close();
+					System.out.println(f.getName() + "	->	" + dbm.getFileName());//debug
 				}
 			}
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
 			System.exit(6);
 		}
-		
 	}
 	
 	public static DynamixBitmap convertImage(File imgPath, DynamixPalette dpl) throws IOException {
 		
 		BufferedImage targImage = ImageIO.read(imgPath);
-		System.out.println(imgPath.getName());//debug
+		
 		if(targImage != null) {
 			DynamixBitmap dbm = new DynamixBitmap();
 			dbm.setExt(FileType.DBM);
@@ -159,6 +158,10 @@ public class ConverToDBM {
 			dbm.setRows((short)targImage.getHeight());
 			dbm.setCols((short)targImage.getWidth());
 			dbm.setBitDepth((short)8);
+			
+			String fileName = imgPath.getName().substring(0, imgPath.getName().toLowerCase().lastIndexOf("png")) + FileType.DBM.val();
+			dbm.setFileName(fileName.toUpperCase());
+			
 			
 			byte[] rasterData = new byte[(targImage.getHeight() * targImage.getWidth())];
 			
@@ -170,9 +173,7 @@ public class ConverToDBM {
 					}
 					int cell = (r * dbm.getCols()) + c;
 					int[] color = targImage.getRaster().getPixel(c, r, new int[4]);
-					color[3] = color[3] == 255 ? 1 : 0; //condense alpha back to 1 byte
 	
-					
 					color[0] = color[0] & 0xff;
 					color[1] = color[1] & 0xff;
 					color[2] = color[2] & 0xff;
@@ -181,13 +182,15 @@ public class ConverToDBM {
 					int index = findNearestColorIndex(dpl, color);
 					rasterData[cell] = (byte)index;
 					
+//					String clrArr = arrToString(color);
 					
-					String clrArr = "[";
-					for(int b : color) {
-						clrArr += b + ",";
-					}
-					clrArr += "]";
-					System.out.println(clrArr + "=" + index);
+					int[] dplColor = new int[4];
+					dplColor[0] = dpl.getColors().get(index).getJavaColor().getRed();
+					dplColor[1] =  dpl.getColors().get(index).getJavaColor().getGreen();
+					dplColor[2] = dpl.getColors().get(index).getJavaColor().getBlue();
+					dplColor[3] = dpl.getColors().get(index).getJavaColor().getAlpha();
+					
+//					System.out.println(clrArr + "=" + index +"{" + arrToString(dplColor) + "}");
 					
 					i++;
 				}
@@ -199,11 +202,23 @@ public class ConverToDBM {
 		return null;
 	}
 	
+//	private static String arrToString(int[] arr) {
+//		String ret = "[";
+//		for(int i=0; i < arr.length; i++) {
+//			ret += arr[i];
+//			if(i<arr.length-1) {
+//				ret += ",";
+//			}
+//		}
+//		ret += "]";
+//		return ret;
+//	}
+	
 	private static double calculateDistance(Color c1, Color c2) {
 		int rDiff = c1.getRed() - c2.getRed();
 		int gDiff = c1.getGreen() - c2.getGreen();
 		int bDiff = c1.getBlue() - c2.getBlue();
-		return Math.sqrt(rDiff * rDiff + gDiff * gDiff + bDiff * bDiff);
+		return Math.sqrt((rDiff * rDiff) + (gDiff * gDiff) + (bDiff * bDiff));
 	}
 
 	private static int findNearestColorIndex(DynamixPalette dpl, int[] color) {
@@ -215,7 +230,7 @@ public class ConverToDBM {
 		double drift = Double.MAX_VALUE;
 		for (int k : dpl.getColors().keySet()) {
 			Color dplColor = dpl.getColors().get(k).getJavaColor();
-			double delta = calculateDistance(dplColor, checkColor);
+			double delta = calculateDistance(checkColor, dplColor);
 			if (delta < drift) {
 				drift = delta;
 				index = k;
