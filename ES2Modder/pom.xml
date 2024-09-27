@@ -7,13 +7,14 @@
 		<artifactId>es2kit</artifactId>
 		<version>0.1.0</version>
 	</parent>
-	<artifactId>CompileDBA</artifactId>
-	<name>CompileDBA</name>
-	<description>Compile an existing list of DBM (Dynamix BitMap) files to a DBA(Dynamix Bitmap Array)</description>
- 	<version>0.0.1</version>
+	<groupId>org.es2tlk</groupId>
+	<artifactId>ES2Modder</artifactId>
+	<version>0.0.1</version>
+	<name>ES2Modder</name>
+	<description>creates a mod dir, sets up folders, scripts, and copies out vol files to begin modding.</description>
 
 	<dependencies>
-		
+
 	</dependencies>
 	<build>
 		<plugins>
@@ -109,7 +110,7 @@
 							</filters>
 							<transformers>
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>org.es2tlk.dba.CompileDBA</mainClass>
+									<mainClass>org.es2tlk.manager.ES2ModProjectSetup</mainClass>
 								</transformer>
 							</transformers>
 						</configuration>

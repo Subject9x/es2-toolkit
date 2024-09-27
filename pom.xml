@@ -2,7 +2,7 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.hercworks</groupId>
+	<groupId>org.es2tools</groupId>
 	<artifactId>es2kit</artifactId>
 	<version>0.1.0</version>
 	<packaging>pom</packaging>
@@ -13,7 +13,6 @@
 
 	<properties>
 		<jdk.version>1.8</jdk.version>
-		<es2.vol.version>0.0.4</es2.vol.version>
 		<es2.core.version>0.3.1</es2.core.version>
 		<es2.transfr.version>0.3.0</es2.transfr.version>
 		<!-- <es2.excavate.version>0.2.1</es2.excavate.version> -->
@@ -26,27 +25,15 @@
 		<module>DBAUnpack</module>
 		<module>DBMconvert</module>
 		<module>es2palette</module>
+		<module>ES2Modder</module>
 	</modules>
 	<dependencies>
-
-		<dependency>
-			<groupId>org.hercworks</groupId>
-			<artifactId>ES2Vol</artifactId>
-			<version>${es2.vol.version}</version>
-			<scope>compile</scope>
-		</dependency>
 
 		<dependency>
 			<groupId>org.hercworks</groupId>
 			<artifactId>Core</artifactId>
 			<version>${es2.core.version}</version>
 			<scope>compile</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>org.hercworks</groupId>
-					<artifactId>ES2Vol</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 
 		<dependency>
