@@ -11,15 +11,86 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.List;
 
+import org.hercworks.core.data.file.dat.shell.ArmHerc;
+import org.hercworks.core.data.file.dat.shell.ArmWeap;
+import org.hercworks.core.data.file.dat.shell.CareerMissions;
+import org.hercworks.core.data.file.dat.shell.HardpointOverlayConfig;
+import org.hercworks.core.data.file.dat.shell.HercInf;
+import org.hercworks.core.data.file.dat.shell.Hercs;
+import org.hercworks.core.data.file.dat.shell.InitHerc;
+import org.hercworks.core.data.file.dat.shell.RprHerc;
+import org.hercworks.core.data.file.dat.shell.WeaponsDat;
+import org.hercworks.core.data.file.dat.sim.BeamData;
+import org.hercworks.core.data.file.dat.sim.HercSimDat;
+import org.hercworks.core.data.file.dat.sim.MissileDatFile;
+import org.hercworks.core.data.file.dat.sim.ProjectileData;
+import org.hercworks.core.data.file.dbsim.FlightModel;
+import org.hercworks.core.data.file.dbsim.GunLayout;
+import org.hercworks.core.data.file.dbsim.PaperDollGraphic;
+import org.hercworks.core.data.struct.herc.HercLUT;
 import org.hercworks.core.io.read.VolFileReader;
 import org.hercworks.core.io.transform.ThreeSpaceByteTransformer;
+import org.hercworks.core.io.transform.dbsim.BeamDatFileTransformer;
+import org.hercworks.core.io.transform.dbsim.FlightModelTransformer;
+import org.hercworks.core.io.transform.dbsim.GunLayoutTransformer;
+import org.hercworks.core.io.transform.dbsim.HercSimDataTransformer;
+import org.hercworks.core.io.transform.dbsim.MissileDatFileTransformer;
+import org.hercworks.core.io.transform.dbsim.PaperDiagramGraphTransformer;
+import org.hercworks.core.io.transform.dbsim.ProjectileDataTransformer;
+import org.hercworks.core.io.transform.shell.ArmHercTransformer;
+import org.hercworks.core.io.transform.shell.ArmWeapTransformer;
+import org.hercworks.core.io.transform.shell.CareerDataTransformer;
+import org.hercworks.core.io.transform.shell.HardpointOverlayTransformer;
+import org.hercworks.core.io.transform.shell.HercInfoTransformer;
+import org.hercworks.core.io.transform.shell.HercsStartTransformer;
+import org.hercworks.core.io.transform.shell.InitHercTransformer;
+import org.hercworks.core.io.transform.shell.RprHercTransform;
+import org.hercworks.core.io.transform.shell.WeaponsDatTransformer;
+import org.hercworks.transfer.dto.file.TransferObject;
+import org.hercworks.transfer.dto.file.shell.ArmHercDTO;
+import org.hercworks.transfer.dto.file.shell.ArmWeapDTO;
+import org.hercworks.transfer.dto.file.shell.CareerMissionsDTO;
+import org.hercworks.transfer.dto.file.shell.HardpointOverlayDTO;
+import org.hercworks.transfer.dto.file.shell.HercInfDTO;
+import org.hercworks.transfer.dto.file.shell.InitHercDTO;
+import org.hercworks.transfer.dto.file.shell.RepairHercDTO;
+import org.hercworks.transfer.dto.file.shell.StartHercsDTO;
+import org.hercworks.transfer.dto.file.shell.WeaponsDatDTO;
+import org.hercworks.transfer.dto.file.sim.BeamDatDTO;
+import org.hercworks.transfer.dto.file.sim.FlightModelDTO;
+import org.hercworks.transfer.dto.file.sim.GunLayoutDTO;
+import org.hercworks.transfer.dto.file.sim.HercSimDatDTO;
+import org.hercworks.transfer.dto.file.sim.MissileDatDTO;
+import org.hercworks.transfer.dto.file.sim.PaperDollDTO;
+import org.hercworks.transfer.dto.file.sim.ProjectileDataDTO;
+import org.hercworks.transfer.svc.impl.dbsim.BeamDatDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.FlightModelDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.GunLayoutDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.HercSimDataDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.PaperDollDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.ProjectileDatDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.ArmHercDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.ArmWeapDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.CareerMissionsDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.HardpointOverlayDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.HercInfoDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.InitHercDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.RepairHercDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.StartingHercsDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.WeaponsDatShellDTOServiceImpl;
 import org.hercworks.voln.DataFile;
 import org.hercworks.voln.FileType;
 import org.hercworks.voln.VolDir;
 import org.hercworks.voln.Voln;
 
-public class ES2ModProjectSetup {
+import com.fasterxml.jackson.core.exc.StreamWriteException;
+import com.fasterxml.jackson.databind.DatabindException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+public final class ES2ModProjectSetup {
+
+	private static ObjectMapper objectMapper;
+	
 	private static boolean endAsDir = true;
 	private static boolean endPathOpen = false;
 	
@@ -35,7 +106,7 @@ public class ES2ModProjectSetup {
 			FileType.PDG
 	);
 	
-	public static void main(String[] args) {
+	public static void setupNewProject(String[] args) {
 		
 		String pathES2Install = null;
 		String modProjName = null;
@@ -121,6 +192,8 @@ public class ES2ModProjectSetup {
 			System.out.println("---setting up mod---");
 			System.out.println("---> REF folders");
 			
+			objectMapper = new ObjectMapper();
+			
 			try {
 				shell0 = VolFileReader.parseVolFile(generatePath(endPathOpen, es2InstallDir.getAbsolutePath(), "VOL", "SHELL0.VOL"));
 				simvol0 = VolFileReader.parseVolFile(generatePath(endPathOpen, es2InstallDir.getAbsolutePath(), "VOL", "SIMVOL0.VOL"));
@@ -149,13 +222,20 @@ public class ES2ModProjectSetup {
 		
 		File srcDirs = new File(generatePath(endAsDir, modPath, "SRC"));
 		srcDirs.mkdir();
-		for(FileType t : folderDirs) {
-			new File(generatePath(endAsDir, srcDirs.getAbsolutePath(), t.val().toLowerCase())).mkdir();
-		}
 		
-		new File(generatePath(endAsDir, modPath, "scripts")).mkdir();
+		populateSrcDirs(shell0, srcDirs.getAbsolutePath());
+		populateSrcDirs(simvol0, srcDirs.getAbsolutePath());
 		
-	
+		
+		File scriptPath = new File(generatePath(endAsDir, modPath, "scripts"));
+		scriptPath.mkdir();
+		
+		
+		
+		
+		
+		System.out.println("Mod setup complete!");
+		System.exit(10);
 	}
 	
 	private static String generatePath(boolean endWithDir, String... segments) {
@@ -175,10 +255,6 @@ public class ES2ModProjectSetup {
 		return path;
 	}
 	
-//	private static void initProjectConfig(ES2ModInfo info, String modRootPath) {
-//
-//	}
-//	
 	private static void saveProjectConfig(ES2ModInfo info, String modRootPath){
 		
 		//generatePath(endPathOpen, modRootPath, "info.txt")
@@ -238,11 +314,30 @@ public class ES2ModProjectSetup {
 		}
 	}
 	
+	private static void populateSrcDirs(Voln vol, String srcExportDir) {
+		for(VolDir dir : vol.getFolders().values()) {
+			if(folderDirs.contains(FileType.typeFromVal(dir.getLabel()))) {
+				File srcDir = new File(generatePath(endAsDir, srcExportDir, dir.getLabel().toUpperCase()));
+				srcDir.mkdir();
+				System.out.println("	" + generatePath(endAsDir, Voln.makeFileName(vol.getFileName()), dir.getLabel().toUpperCase()));
+				
+				if(srcDir.exists()) {
+					for(DataFile volFile : dir.getFiles()) {
+						try {
+							volFile.setDir(FileType.typeFromVal(dir.getLabel()));
+							writeDynamixFile(volFile, srcDir.getAbsolutePath());
+						} catch (IOException e) {
+							System.out.println(e.getMessage());
+						}
+					}
+				}
+			}
+		}
+	}
+	
 	/**
 	 * 
 			FileType.DAT,
-			FileType.DBA,
-			FileType.DBM,
 			FileType.DMG,
 			FileType.DPL,
 			FileType.FM,
@@ -251,37 +346,122 @@ public class ES2ModProjectSetup {
 			FileType.PDG
 	 * @param data
 	 * @param dirPath
+	 * @throws IOException 
+	 * @throws DatabindException 
+	 * @throws StreamWriteException 
 	 */
-	private static void writeDynamixFile(DataFile data, String dirPath) {
+	private static void writeDynamixFile(DataFile data, String dirPath) throws StreamWriteException, DatabindException, IOException {
 		
 		ThreeSpaceByteTransformer transformer;
+		TransferObject dtoExport = null;
+		File write = null;
+		String fileName = data.originNameNoExt();
+		
 		switch(data.getDir()) {
 		case DAT:
+			if(data.getFileName().toLowerCase().contains("beam")) {
+				transformer = new BeamDatFileTransformer();
+				BeamData beam = (BeamData)transformer.bytesToObject(data.getRawBytes());
+				dtoExport = (BeamDatDTO)(new BeamDatDTOServiceImpl().convertToDTO(beam));
+			}
+			else if(data.getFileName().toLowerCase().contains("proj")) {
+				transformer = new ProjectileDataTransformer();
+				ProjectileData proj = (ProjectileData)transformer.bytesToObject(data.getRawBytes());
+				dtoExport = (ProjectileDataDTO)(new ProjectileDatDTOServiceImpl().convertToDTO(proj));
+			}
+			else if(HercLUT.getByAbbrev(data.originNameNoExt()) != null) {
+				transformer = new HercSimDataTransformer();
+				HercSimDat simDat = (HercSimDat)transformer.bytesToObject(data.getRawBytes());
+				dtoExport = (HercSimDatDTO)(new HercSimDataDTOServiceImpl().convertToDTO(simDat));
+			}
+			
+			else if(data.getFileName().toLowerCase().contains("BULLETS") 
+					|| data.getFileName().toLowerCase().contains("ROCKETS")) {
+				transformer = new MissileDatFileTransformer();
+				MissileDatFile missiles = (MissileDatFile)transformer.bytesToObject(data.getRawBytes());
+				missiles.setFileName(data.originNameNoExt());
+				dtoExport = (MissileDatDTO)(new HercSimDataDTOServiceImpl().convertToDTO(missiles));
+			}
 			
 			break;
-		case DBA:
-		
-			break;
-		case DBM:
-		
-			break;
-		case DPL:
-		
-			break;
+			
 		case FM:
-		
+			transformer = new FlightModelTransformer();
+			FlightModel fm = (FlightModel)transformer.bytesToObject(data.getRawBytes());
+			dtoExport = (FlightModelDTO)(new FlightModelDTOServiceImpl().convertToDTO(fm));
 			break;
+			
 		case GAM:
-		
+			if(data.getFileName().toLowerCase().contains("ini_")) {
+				transformer = new InitHercTransformer();
+				InitHerc rprHerc = (InitHerc)transformer.bytesToObject(data.getRawBytes());
+				dtoExport = (InitHercDTO)(new InitHercDTOServiceImpl().convertToDTO(rprHerc));
+			}
+			else if(data.getFileName().toLowerCase().contains("_hots")) {
+				transformer = new HardpointOverlayTransformer();
+				HardpointOverlayConfig overlay = (HardpointOverlayConfig)transformer.bytesToObject(data.getRawBytes());
+				overlay.setFileName(data.getFileName().toUpperCase());
+				dtoExport = (HardpointOverlayDTO)(new HardpointOverlayDTOServiceImpl().convertToDTO(overlay));
+			}
+			else if(data.getFileName().toLowerCase().contains("rpr_")) {
+				transformer = new RprHercTransform();
+				RprHerc rprHerc = (RprHerc)transformer.bytesToObject(data.getRawBytes());
+				dtoExport = (RepairHercDTO)(new RepairHercDTOServiceImpl().convertToDTO(rprHerc));
+			}
+			else if(data.getFileName().toLowerCase().contains("arm_weap")) {
+				transformer = new ArmWeapTransformer();
+				ArmWeap armWeap = (ArmWeap)transformer.bytesToObject(data.getRawBytes());
+				dtoExport = (ArmWeapDTO)(new ArmWeapDTOServiceImpl().convertToDTO(armWeap));
+			}
+			else if(data.getFileName().toLowerCase().contains("arm_")) {
+				transformer = new ArmHercTransformer();
+				ArmHerc armHerc = (ArmHerc)transformer.bytesToObject(data.getRawBytes());
+				dtoExport = (ArmHercDTO)(new ArmHercDTOServiceImpl().convertToDTO(armHerc));
+			}
+			else if(data.getFileName().toLowerCase().contains("herc_inf")) {
+				transformer = new HercInfoTransformer();
+				HercInf hercInfo = (HercInf)transformer.bytesToObject(data.getRawBytes());
+				dtoExport = (HercInfDTO)(new HercInfoDTOServiceImpl().convertToDTO(hercInfo));
+			} 
+			else if(data.getFileName().toLowerCase().contains("hercs")) {
+				transformer = new HercsStartTransformer();
+				Hercs hercs = (Hercs)transformer.bytesToObject(data.getRawBytes());
+				dtoExport = (StartHercsDTO)(new StartingHercsDTOServiceImpl().convertToDTO(hercs));
+			} 
+			else if(data.getFileName().toLowerCase().contains("weapons")) {
+				transformer = new WeaponsDatTransformer();
+				WeaponsDat weaponsDat = (WeaponsDat)transformer.bytesToObject(data.getRawBytes());
+				dtoExport = (WeaponsDatDTO)(new WeaponsDatShellDTOServiceImpl().convertToDTO(weaponsDat));
+			} 
+			else if(data.getFileName().toLowerCase().contains("career")) {
+				transformer = new CareerDataTransformer();
+				CareerMissions career = (CareerMissions)transformer.bytesToObject(data.getRawBytes());
+				dtoExport = (CareerMissionsDTO)(new CareerMissionsDTOServiceImpl().convertToDTO(career));
+			} 
 			break;
+			
 		case GL:
-		
+			transformer = new GunLayoutTransformer();
+			GunLayout gunLayout = (GunLayout)transformer.bytesToObject(data.getRawBytes());
+			dtoExport = (GunLayoutDTO)(new GunLayoutDTOServiceImpl().convertToDTO(gunLayout));
 			break;
+			
 		case PDG:
-		
+			transformer = new PaperDiagramGraphTransformer();
+			PaperDollGraphic pdg = (PaperDollGraphic)transformer.bytesToObject(data.getRawBytes());
+			dtoExport = (PaperDollDTO)(new PaperDollDTOServiceImpl().convertToDTO(pdg));
 			break;
 		default:
 			break;
+		}
+		
+		if(dtoExport != null) {
+			dtoExport.setFileName(fileName);
+			dtoExport.setFileExt(data.getExt().val());
+			dtoExport.setDir(data.getDir().val());
+			write = new File(generatePath(endPathOpen, dirPath, fileName + ".json"));
+			objectMapper.writerWithDefaultPrettyPrinter().writeValue(write, dtoExport);
+			System.out.println("		"+fileName+".json");
 		}
 	}
 }

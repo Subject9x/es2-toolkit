@@ -13,8 +13,8 @@
 
 	<properties>
 		<jdk.version>1.8</jdk.version>
-		<es2.core.version>0.3.1</es2.core.version>
-		<es2.transfr.version>0.3.0</es2.transfr.version>
+		<es2.core.version>0.3.4</es2.core.version>
+		<es2.transfr.version>0.3.3</es2.transfr.version>
 		<!-- <es2.excavate.version>0.2.1</es2.excavate.version> -->
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.release>9</maven.compiler.release>
@@ -31,20 +31,20 @@
 
 		<dependency>
 			<groupId>org.hercworks</groupId>
-			<artifactId>Core</artifactId>
+			<artifactId>ES2Core</artifactId>
 			<version>${es2.core.version}</version>
 			<scope>compile</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.hercworks</groupId>
-			<artifactId>TransferApi</artifactId>
+			<artifactId>ES2TransferApi</artifactId>
 			<version>${es2.transfr.version}</version>
 			<scope>compile</scope>
 			<exclusions>
 				<exclusion>
 					<groupId>org.hercworks</groupId>
-					<artifactId>Core</artifactId>
+					<artifactId>ES2Core</artifactId>
 				</exclusion>
 				<exclusion>
 					<groupId>org.hercworks</groupId>
