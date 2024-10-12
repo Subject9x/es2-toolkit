@@ -1,0 +1,98 @@
+//Earthsiege 2 Mod Compiler - v0.0.1
+//	DBSIM.exe asset builder.
+//	+ compiles all known data files for the DBSIM.
+//	+ make sure this file is in your mod directory root.
+module=dbsim
+options=
+//	c : copy, will copy files to <es2 install dirs>
+	
+// /DAT
+//	Game data files
+dat/BEAM.DAT.json
+dat/PROJ.DAT.json
+
+//	Unit Data Files
+dat/ACHILLES.DAT.json
+dat/APOCA.DAT.json
+dat/CERBERUS.DAT.json
+dat/COLOSSUS.DAT.json
+dat/DIABLO.DAT.json
+dat/HEADHUNT.DAT.json
+dat/HYPERION.DAT.json
+dat/MAVERICK.DAT.json
+dat/MIRIMAC.DAT.json
+dat/MONGOOSE.DAT.json
+dat/OGRE.DAT.json
+dat/OUTLAW.DAT.json
+dat/PITBULL.DAT.json
+dat/RAMSES.DAT.json
+dat/RAPTOR2.DAT.json
+dat/RAZOR.DAT.json
+dat/SAMSON.DAT.json
+dat/SCARAB.DAT.json
+dat/SPIDER.DAT.json
+dat/STINGRAY.DAT.json
+dat/TOMAHAWK.DAT.json
+
+//	/DMG
+//	Armor Hitpoints, Critical system location/layout, hit-chances.
+dmg/ACHILLES.DMG.json
+dmg/APOCA.DMG.json
+dmg/CERBERUS.DMG.json
+dmg/COLOSSUS.DMG.json
+dmg/DIABLO.DMG.json
+dmg/HEADHUNT.DMG.json
+dmg/HYPERION.DMG.json
+dmg/MAVERICK.DMG.json
+dmg/MIRIMAC.DMG.json
+dmg/MONGOOSE.DMG.json
+dmg/OGRE.DMG.json
+dmg/OUTLAW.DMG.json
+dmg/PITBULL.DMG.json
+dmg/RAMSES.DMG.json
+dmg/RAPTOR2.DMG.json
+dmg/RAZOR.DMG.json
+dmg/SAMSON.DMG.json
+dmg/SCARAB.DMG.json
+dmg/SPIDER.DMG.json
+dmg/STINGRAY.DMG.json
+dmg/TOMAHAWK.DMG.json
+
+//	/FM
+//	Flight Models
+fm/RAZOR.FM.json
+fm/SKIMMER.FM.json
+
+//	/GL
+//	Gun-Layout diagrams
+gl/ACHILLES.GL.json
+gl/APOCA.GL.json
+gl/CERBERUS.GL.json
+gl/COLOSSUS.GL.json
+gl/DIABLO.GL.json
+gl/HEADHUNT.GL.json
+gl/HYPERION.GL.json
+gl/MAVERICK.GL.json
+gl/MIRIMAC.GL.json
+gl/MONGOOSE.GL.json
+gl/OGRE.GL.json
+gl/OUTLAW.GL.json
+gl/PITBULL.GL.json
+gl/RAMSES.GL.json
+gl/RAPTOR2.GL.json
+gl/RAZOR.GL.json
+gl/SAMSON.GL.json
+gl/SCARAB.GL.json
+gl/SPIDER.GL.json
+gl/STINGRAY.GL.json
+gl/TOMAHAWK.GL.json
+
+
+//	/DBM
+//		listed here for copy/overwrite, to compile please use DBMConvert
+
+//	/DBA
+//		listed here for copy/overwrite, to compile please use CompileDBA
+
+//	/DPL
+//		listed here for copy/overwite, to compile please use ES2Paletter

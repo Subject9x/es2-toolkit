@@ -8,15 +8,28 @@
 		<version>0.1.0</version>
 	</parent>
 	<groupId>org.es2tlk</groupId>
-	<artifactId>ES2Modder</artifactId>
+	<artifactId>ES2ModCompiler</artifactId>
 	<version>0.0.1</version>
-	<name>ES2Modder</name>
+	<name>ES2ModCompiler</name>
 	<description>creates a mod dir, sets up folders, scripts, and copies out vol files to begin modding.</description>
 
 	<dependencies>
-
+		<dependency>
+		    <groupId>commons-io</groupId>
+		    <artifactId>commons-io</artifactId>
+		    <version>2.17.0</version>
+		</dependency>
 	</dependencies>
 	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>3.3.1</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 		<plugins>
 			<!-- clean lifecycle, see
 			https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
@@ -27,14 +40,31 @@
 			https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging -->
 			<plugin>
 				<artifactId>maven-resources-plugin</artifactId>
-		        <version>3.3.1</version>
 		        <executions>
 					<execution>
 						<phase>generate-test-resources</phase>
 						<configuration>
-					<outputDirectory>${basedir}/target/classes</outputDirectory>
-					<resources>
-					</resources>
+							<outputDirectory>${basedir}/target/classes</outputDirectory>
+							<resources>
+							</resources>
+						</configuration>
+					</execution>
+					<execution>
+						<id>copy-resources-1</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${basedir}/target/scripts</outputDirectory>
+							<resources>
+								<resource>
+									<directory>scripts</directory>
+									<includes>
+										<include>compile_shell.txt</include>
+									</includes>
+								</resource>
+							</resources>
 						</configuration>
 					</execution>
 				</executions>

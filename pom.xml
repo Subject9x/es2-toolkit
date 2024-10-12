@@ -25,7 +25,7 @@
 		<module>DBAUnpack</module>
 		<module>DBMconvert</module>
 		<module>es2palette</module>
-		<module>ES2Modder</module>
+		<module>ES2ModCompiler</module>
 	</modules>
 	<dependencies>
 

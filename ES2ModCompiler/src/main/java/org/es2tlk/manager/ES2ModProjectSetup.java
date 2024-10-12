@@ -8,9 +8,9 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.List;
+import java.net.URL;
 
+import org.apache.commons.io.FileUtils;
 import org.hercworks.core.data.file.dat.shell.ArmHerc;
 import org.hercworks.core.data.file.dat.shell.ArmWeap;
 import org.hercworks.core.data.file.dat.shell.CareerMissions;
@@ -26,17 +26,21 @@ import org.hercworks.core.data.file.dat.sim.MissileDatFile;
 import org.hercworks.core.data.file.dat.sim.ProjectileData;
 import org.hercworks.core.data.file.dbsim.FlightModel;
 import org.hercworks.core.data.file.dbsim.GunLayout;
+import org.hercworks.core.data.file.dbsim.HercSimDamage;
 import org.hercworks.core.data.file.dbsim.PaperDollGraphic;
+import org.hercworks.core.data.file.dbsim.WeaponPaperDiagram;
 import org.hercworks.core.data.struct.herc.HercLUT;
 import org.hercworks.core.io.read.VolFileReader;
 import org.hercworks.core.io.transform.ThreeSpaceByteTransformer;
 import org.hercworks.core.io.transform.dbsim.BeamDatFileTransformer;
 import org.hercworks.core.io.transform.dbsim.FlightModelTransformer;
 import org.hercworks.core.io.transform.dbsim.GunLayoutTransformer;
+import org.hercworks.core.io.transform.dbsim.HercDamageFileTransformer;
 import org.hercworks.core.io.transform.dbsim.HercSimDataTransformer;
 import org.hercworks.core.io.transform.dbsim.MissileDatFileTransformer;
 import org.hercworks.core.io.transform.dbsim.PaperDiagramGraphTransformer;
 import org.hercworks.core.io.transform.dbsim.ProjectileDataTransformer;
+import org.hercworks.core.io.transform.dbsim.WeaponPDGTransformer;
 import org.hercworks.core.io.transform.shell.ArmHercTransformer;
 import org.hercworks.core.io.transform.shell.ArmWeapTransformer;
 import org.hercworks.core.io.transform.shell.CareerDataTransformer;
@@ -59,16 +63,20 @@ import org.hercworks.transfer.dto.file.shell.WeaponsDatDTO;
 import org.hercworks.transfer.dto.file.sim.BeamDatDTO;
 import org.hercworks.transfer.dto.file.sim.FlightModelDTO;
 import org.hercworks.transfer.dto.file.sim.GunLayoutDTO;
+import org.hercworks.transfer.dto.file.sim.HercDmgDTO;
 import org.hercworks.transfer.dto.file.sim.HercSimDatDTO;
 import org.hercworks.transfer.dto.file.sim.MissileDatDTO;
 import org.hercworks.transfer.dto.file.sim.PaperDollDTO;
 import org.hercworks.transfer.dto.file.sim.ProjectileDataDTO;
+import org.hercworks.transfer.dto.file.sim.WpnPDGDTO;
 import org.hercworks.transfer.svc.impl.dbsim.BeamDatDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.FlightModelDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.GunLayoutDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.HercSimDataDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.HercSimDmgDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.PaperDollDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.ProjectileDatDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.WeapnPDGDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.shell.ArmHercDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.shell.ArmWeapDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.shell.CareerMissionsDTOServiceImpl;
@@ -94,19 +102,7 @@ public final class ES2ModProjectSetup {
 	private static boolean endAsDir = true;
 	private static boolean endPathOpen = false;
 	
-	public static List<FileType> folderDirs = Arrays.asList(
-			FileType.DAT,
-			FileType.DBA,
-			FileType.DBM,
-			FileType.DMG,
-			FileType.DPL,
-			FileType.FM,
-			FileType.GAM,
-			FileType.GL,
-			FileType.PDG
-	);
-	
-	public static void setupNewProject(String[] args) {
+	public void setupNewProject(String[] args) {
 		
 		String pathES2Install = null;
 		String modProjName = null;
@@ -174,7 +170,7 @@ public final class ES2ModProjectSetup {
 			System.exit(2);
 		}
 		
-		if(!modDir.mkdir()) {
+		if(!modDir.mkdirs()) {
 			System.err.println("Dir[" + modPath + "] couldn't be created.");
 			System.exit(2);
 		}
@@ -186,53 +182,61 @@ public final class ES2ModProjectSetup {
 		projectData.setProperty(ES2ModInfo.projName, modProjName);
 		projectData.setProperty(ES2ModInfo.projAuthor, modAuthor);
 		saveProjectConfig(projectData, modPath);
-		
-		File refDirs = new File(generatePath(endAsDir, modPath, "REF"));
-		if(refDirs.mkdir()) {
-			System.out.println("---setting up mod---");
-			System.out.println("---> REF folders");
+
+		objectMapper = new ObjectMapper();
+		try {
+			shell0 = VolFileReader.parseVolFile(generatePath(endPathOpen, es2InstallDir.getAbsolutePath(), "VOL", "SHELL0.VOL"));
+			simvol0 = VolFileReader.parseVolFile(generatePath(endPathOpen, es2InstallDir.getAbsolutePath(), "VOL", "SIMVOL0.VOL"));
 			
-			objectMapper = new ObjectMapper();
-			
-			try {
-				shell0 = VolFileReader.parseVolFile(generatePath(endPathOpen, es2InstallDir.getAbsolutePath(), "VOL", "SHELL0.VOL"));
-				simvol0 = VolFileReader.parseVolFile(generatePath(endPathOpen, es2InstallDir.getAbsolutePath(), "VOL", "SIMVOL0.VOL"));
-				
-				if(shell0 == null || simvol0 == null) {
-					throw new NullPointerException();				
-				}
-			} catch (Exception e) {
-				System.err.println("Error reading SHELL0.VOL and/or SIMVOL0.VOL at [" + es2InstallDir + "/VOL/");
-				System.exit(-1);
+			if(shell0 == null || simvol0 == null) {
+				throw new NullPointerException();				
 			}
-			
-			File srcShell0Dir = new File(generatePath(endAsDir, refDirs.getAbsolutePath(), "SHELL0"));
-			srcShell0Dir.mkdir();
-			
-			File srcSimVol0Dir = new File(generatePath(endAsDir, refDirs.getAbsolutePath(), "SIMVOL0"));
-			srcSimVol0Dir.mkdir();
-			
-			populateExportedVolDirs(shell0, srcShell0Dir.getAbsolutePath());
-			populateExportedVolDirs(simvol0, srcSimVol0Dir.getAbsolutePath());
-			
-		}
-		else {
-			System.out.println("failed to make /src directory at [" + refDirs +"]");
+		} catch (Exception e) {
+			System.err.println("Error reading SHELL0.VOL and/or SIMVOL0.VOL at [" + es2InstallDir + "/VOL/");
+			System.exit(-1);
 		}
 		
-		File srcDirs = new File(generatePath(endAsDir, modPath, "SRC"));
-		srcDirs.mkdir();
+		File refDirs = new File(generatePath(endAsDir, modRoot.getAbsolutePath(), "REF"));
+		if(!refDirs.exists()) {
+			if(refDirs.mkdir()) {
+				System.out.println("---Installing reference data files from .vol---");
+				System.out.println("---> REF folders");
+				
+
+				
+				File srcShell0Dir = new File(generatePath(endAsDir, refDirs.getAbsolutePath(), "SHELL0"));
+				srcShell0Dir.mkdir();
+				
+				File srcSimVol0Dir = new File(generatePath(endAsDir, refDirs.getAbsolutePath(), "SIMVOL0"));
+				srcSimVol0Dir.mkdir();
+				
+				populateExportedVolDirs(shell0, srcShell0Dir.getAbsolutePath(), true);
+				populateExportedVolDirs(simvol0, srcSimVol0Dir.getAbsolutePath(), true);
+				
+			}
+			else {
+				System.out.println("failed to make /src directory at [" + refDirs +"]");
+			}
+		}
+
+		System.out.println("---setting up mod---");
 		
-		populateSrcDirs(shell0, srcDirs.getAbsolutePath());
-		populateSrcDirs(simvol0, srcDirs.getAbsolutePath());
+		populateSrcDirs(shell0, modDir.getAbsolutePath());
+		populateSrcDirs(simvol0, modDir.getAbsolutePath());
 		
+		//Build output make folder
+		URL cmpShellUrl = this.getClass().getResource("/scripts/compile_shell.txt");
+		URL cmpSimUrl = this.getClass().getResource("/scripts/compile_sim.txt");
 		
-		File scriptPath = new File(generatePath(endAsDir, modPath, "scripts"));
-		scriptPath.mkdir();
+		try {
+			FileUtils.copyURLToFile(cmpShellUrl, new File(generatePath(endPathOpen, modDir.getAbsolutePath(), "compile_shell.txt")));
+			FileUtils.copyURLToFile(cmpSimUrl, new File(generatePath(endPathOpen, modDir.getAbsolutePath(), "compile_sim.txt")));
+			
+		} catch (IOException e) {
+			System.err.println(e.getMessage());
+		}
 		
-		
-		
-		
+		new File(generatePath(endAsDir, modDir.getAbsolutePath(), "export")).mkdir();
 		
 		System.out.println("Mod setup complete!");
 		System.exit(10);
@@ -294,19 +298,20 @@ public final class ES2ModProjectSetup {
 	 * @param vol
 	 * @param volExportDir
 	 */
-	private static void populateExportedVolDirs(Voln vol, String volExportDir) {
+	private static void populateExportedVolDirs(Voln vol, String volExportDir, boolean extractfiles) {
 		for(VolDir dir : vol.getFolders().values()) {
-			if(folderDirs.contains(FileType.typeFromVal(dir.getLabel()))) {
+			if(MainEntry.folderDirs.contains(FileType.typeFromVal(dir.getLabel()))) {
 				File srcDir = new File(generatePath(endAsDir, volExportDir, dir.getLabel().toUpperCase()));
 				srcDir.mkdir();
 				System.out.println("	" + generatePath(endAsDir, Voln.makeFileName(vol.getFileName()), dir.getLabel().toUpperCase()));
-				
-				if(srcDir.exists()) {
-					for(DataFile volFile : dir.getFiles()) {
-						try {
-							extractVolFile(volFile, srcDir.getAbsolutePath());
-						} catch (IOException e) {
-							System.err.println(e.getMessage());
+				if(extractfiles) {
+					if(srcDir.exists()) {
+						for(DataFile volFile : dir.getFiles()) {
+							try {
+								extractVolFile(volFile, srcDir.getAbsolutePath());
+							} catch (IOException e) {
+								System.err.println(e.getMessage());
+							}
 						}
 					}
 				}
@@ -316,7 +321,7 @@ public final class ES2ModProjectSetup {
 	
 	private static void populateSrcDirs(Voln vol, String srcExportDir) {
 		for(VolDir dir : vol.getFolders().values()) {
-			if(folderDirs.contains(FileType.typeFromVal(dir.getLabel()))) {
+			if(MainEntry.folderDirs.contains(FileType.typeFromVal(dir.getLabel()))) {
 				File srcDir = new File(generatePath(endAsDir, srcExportDir, dir.getLabel().toUpperCase()));
 				srcDir.mkdir();
 				System.out.println("	" + generatePath(endAsDir, Voln.makeFileName(vol.getFileName()), dir.getLabel().toUpperCase()));
@@ -357,111 +362,135 @@ public final class ES2ModProjectSetup {
 		File write = null;
 		String fileName = data.originNameNoExt();
 		
-		switch(data.getDir()) {
-		case DAT:
-			if(data.getFileName().toLowerCase().contains("beam")) {
-				transformer = new BeamDatFileTransformer();
-				BeamData beam = (BeamData)transformer.bytesToObject(data.getRawBytes());
-				dtoExport = (BeamDatDTO)(new BeamDatDTOServiceImpl().convertToDTO(beam));
-			}
-			else if(data.getFileName().toLowerCase().contains("proj")) {
-				transformer = new ProjectileDataTransformer();
-				ProjectileData proj = (ProjectileData)transformer.bytesToObject(data.getRawBytes());
-				dtoExport = (ProjectileDataDTO)(new ProjectileDatDTOServiceImpl().convertToDTO(proj));
-			}
-			else if(HercLUT.getByAbbrev(data.originNameNoExt()) != null) {
-				transformer = new HercSimDataTransformer();
-				HercSimDat simDat = (HercSimDat)transformer.bytesToObject(data.getRawBytes());
-				dtoExport = (HercSimDatDTO)(new HercSimDataDTOServiceImpl().convertToDTO(simDat));
+		try {
+			switch(data.getDir()) {
+			case DAT:
+				if(data.getFileName().toLowerCase().contains("beam")) {
+					transformer = new BeamDatFileTransformer();
+					BeamData beam = (BeamData)transformer.bytesToObject(data.getRawBytes());
+					dtoExport = (BeamDatDTO)(new BeamDatDTOServiceImpl().convertToDTO(beam));
+				}
+				else if(data.getFileName().toLowerCase().contains("proj")) {
+					transformer = new ProjectileDataTransformer();
+					ProjectileData proj = (ProjectileData)transformer.bytesToObject(data.getRawBytes());
+					dtoExport = (ProjectileDataDTO)(new ProjectileDatDTOServiceImpl().convertToDTO(proj));
+				}
+				else if(HercLUT.getByAbbrev(data.originNameNoExt()) != null) {
+					transformer = new HercSimDataTransformer();
+					HercSimDat simDat = (HercSimDat)transformer.bytesToObject(data.getRawBytes());
+					dtoExport = (HercSimDatDTO)(new HercSimDataDTOServiceImpl().convertToDTO(simDat));
+				}
+				
+				else if(data.getFileName().toLowerCase().contains("BULLETS") 
+						|| data.getFileName().toLowerCase().contains("ROCKETS")) {
+					transformer = new MissileDatFileTransformer();
+					MissileDatFile missiles = (MissileDatFile)transformer.bytesToObject(data.getRawBytes());
+					missiles.setFileName(data.originNameNoExt());
+					dtoExport = (MissileDatDTO)(new HercSimDataDTOServiceImpl().convertToDTO(missiles));
+				}
+				
+				break;
+			
+			case DMG:
+				transformer = new HercDamageFileTransformer();
+				HercSimDamage dmg = (HercSimDamage)transformer.bytesToObject(data.getRawBytes());
+				dtoExport = (HercDmgDTO)(new HercSimDmgDTOServiceImpl().convertToDTO(dmg));
+				break;
+				
+			case FM:
+				transformer = new FlightModelTransformer();
+				FlightModel fm = (FlightModel)transformer.bytesToObject(data.getRawBytes());
+				dtoExport = (FlightModelDTO)(new FlightModelDTOServiceImpl().convertToDTO(fm));
+				break;
+				
+			case GAM:
+				if(data.getFileName().toLowerCase().contains("ini_")) {
+					transformer = new InitHercTransformer();
+					InitHerc rprHerc = (InitHerc)transformer.bytesToObject(data.getRawBytes());
+					dtoExport = (InitHercDTO)(new InitHercDTOServiceImpl().convertToDTO(rprHerc));
+				}
+				else if(data.getFileName().toLowerCase().contains("_hots")) {
+					transformer = new HardpointOverlayTransformer();
+					HardpointOverlayConfig overlay = (HardpointOverlayConfig)transformer.bytesToObject(data.getRawBytes());
+					overlay.setFileName(data.getFileName().toUpperCase());
+					dtoExport = (HardpointOverlayDTO)(new HardpointOverlayDTOServiceImpl().convertToDTO(overlay));
+				}
+				else if(data.getFileName().toLowerCase().contains("rpr_")) {
+					transformer = new RprHercTransform();
+					RprHerc rprHerc = (RprHerc)transformer.bytesToObject(data.getRawBytes());
+					dtoExport = (RepairHercDTO)(new RepairHercDTOServiceImpl().convertToDTO(rprHerc));
+				}
+				else if(data.getFileName().toLowerCase().contains("arm_weap")) {
+					transformer = new ArmWeapTransformer();
+					ArmWeap armWeap = (ArmWeap)transformer.bytesToObject(data.getRawBytes());
+					dtoExport = (ArmWeapDTO)(new ArmWeapDTOServiceImpl().convertToDTO(armWeap));
+				}
+				else if(data.getFileName().toLowerCase().contains("arm_")) {
+					transformer = new ArmHercTransformer();
+					ArmHerc armHerc = (ArmHerc)transformer.bytesToObject(data.getRawBytes());
+					dtoExport = (ArmHercDTO)(new ArmHercDTOServiceImpl().convertToDTO(armHerc));
+				}
+				else if(data.getFileName().toLowerCase().contains("herc_inf")) {
+					transformer = new HercInfoTransformer();
+					HercInf hercInfo = (HercInf)transformer.bytesToObject(data.getRawBytes());
+					dtoExport = (HercInfDTO)(new HercInfoDTOServiceImpl().convertToDTO(hercInfo));
+				} 
+				else if(data.getFileName().toLowerCase().contains("hercs")) {
+					transformer = new HercsStartTransformer();
+					Hercs hercs = (Hercs)transformer.bytesToObject(data.getRawBytes());
+					dtoExport = (StartHercsDTO)(new StartingHercsDTOServiceImpl().convertToDTO(hercs));
+				} 
+				else if(data.getFileName().toLowerCase().contains("weapons")) {
+					transformer = new WeaponsDatTransformer();
+					WeaponsDat weaponsDat = (WeaponsDat)transformer.bytesToObject(data.getRawBytes());
+					dtoExport = (WeaponsDatDTO)(new WeaponsDatShellDTOServiceImpl().convertToDTO(weaponsDat));
+				} 
+				else if(data.getFileName().toLowerCase().contains("career")) {
+					transformer = new CareerDataTransformer();
+					CareerMissions career = (CareerMissions)transformer.bytesToObject(data.getRawBytes());
+					dtoExport = (CareerMissionsDTO)(new CareerMissionsDTOServiceImpl().convertToDTO(career));
+				} 
+				break;
+				
+			case GL:
+				transformer = new GunLayoutTransformer();
+				GunLayout gunLayout = (GunLayout)transformer.bytesToObject(data.getRawBytes());
+				dtoExport = (GunLayoutDTO)(new GunLayoutDTOServiceImpl().convertToDTO(gunLayout));
+				break;
+				
+			case PDG:
+				if(data.getFileName().toLowerCase().contains("weapons")) {
+					transformer = new WeaponPDGTransformer();
+					WeaponPaperDiagram wpnPDG = (WeaponPaperDiagram)transformer.bytesToObject(data.getRawBytes());
+					dtoExport = (WpnPDGDTO)(new WeapnPDGDTOServiceImpl().convertToDTO(wpnPDG));
+				}
+				else {
+					transformer = new PaperDiagramGraphTransformer();
+					PaperDollGraphic pdg = (PaperDollGraphic)transformer.bytesToObject(data.getRawBytes());
+					dtoExport = (PaperDollDTO)(new PaperDollDTOServiceImpl().convertToDTO(pdg));	
+				}
+				break;
+			default:
+				break;
 			}
 			
-			else if(data.getFileName().toLowerCase().contains("BULLETS") 
-					|| data.getFileName().toLowerCase().contains("ROCKETS")) {
-				transformer = new MissileDatFileTransformer();
-				MissileDatFile missiles = (MissileDatFile)transformer.bytesToObject(data.getRawBytes());
-				missiles.setFileName(data.originNameNoExt());
-				dtoExport = (MissileDatDTO)(new HercSimDataDTOServiceImpl().convertToDTO(missiles));
+			if(dtoExport != null) {
+				
+				String fileOut = fileName + "." + data.getExt().val().toUpperCase() +".json";
+				
+				dtoExport.setFileName(fileName);
+				dtoExport.setFileExt(data.getExt().val());
+				dtoExport.setDir(data.getDir().val());
+				
+				write = new File(generatePath(endPathOpen, dirPath, fileOut));
+				objectMapper.writerWithDefaultPrettyPrinter().writeValue(write, dtoExport);
+				
+				System.out.println("		"+fileOut);
 			}
-			
-			break;
-			
-		case FM:
-			transformer = new FlightModelTransformer();
-			FlightModel fm = (FlightModel)transformer.bytesToObject(data.getRawBytes());
-			dtoExport = (FlightModelDTO)(new FlightModelDTOServiceImpl().convertToDTO(fm));
-			break;
-			
-		case GAM:
-			if(data.getFileName().toLowerCase().contains("ini_")) {
-				transformer = new InitHercTransformer();
-				InitHerc rprHerc = (InitHerc)transformer.bytesToObject(data.getRawBytes());
-				dtoExport = (InitHercDTO)(new InitHercDTOServiceImpl().convertToDTO(rprHerc));
-			}
-			else if(data.getFileName().toLowerCase().contains("_hots")) {
-				transformer = new HardpointOverlayTransformer();
-				HardpointOverlayConfig overlay = (HardpointOverlayConfig)transformer.bytesToObject(data.getRawBytes());
-				overlay.setFileName(data.getFileName().toUpperCase());
-				dtoExport = (HardpointOverlayDTO)(new HardpointOverlayDTOServiceImpl().convertToDTO(overlay));
-			}
-			else if(data.getFileName().toLowerCase().contains("rpr_")) {
-				transformer = new RprHercTransform();
-				RprHerc rprHerc = (RprHerc)transformer.bytesToObject(data.getRawBytes());
-				dtoExport = (RepairHercDTO)(new RepairHercDTOServiceImpl().convertToDTO(rprHerc));
-			}
-			else if(data.getFileName().toLowerCase().contains("arm_weap")) {
-				transformer = new ArmWeapTransformer();
-				ArmWeap armWeap = (ArmWeap)transformer.bytesToObject(data.getRawBytes());
-				dtoExport = (ArmWeapDTO)(new ArmWeapDTOServiceImpl().convertToDTO(armWeap));
-			}
-			else if(data.getFileName().toLowerCase().contains("arm_")) {
-				transformer = new ArmHercTransformer();
-				ArmHerc armHerc = (ArmHerc)transformer.bytesToObject(data.getRawBytes());
-				dtoExport = (ArmHercDTO)(new ArmHercDTOServiceImpl().convertToDTO(armHerc));
-			}
-			else if(data.getFileName().toLowerCase().contains("herc_inf")) {
-				transformer = new HercInfoTransformer();
-				HercInf hercInfo = (HercInf)transformer.bytesToObject(data.getRawBytes());
-				dtoExport = (HercInfDTO)(new HercInfoDTOServiceImpl().convertToDTO(hercInfo));
-			} 
-			else if(data.getFileName().toLowerCase().contains("hercs")) {
-				transformer = new HercsStartTransformer();
-				Hercs hercs = (Hercs)transformer.bytesToObject(data.getRawBytes());
-				dtoExport = (StartHercsDTO)(new StartingHercsDTOServiceImpl().convertToDTO(hercs));
-			} 
-			else if(data.getFileName().toLowerCase().contains("weapons")) {
-				transformer = new WeaponsDatTransformer();
-				WeaponsDat weaponsDat = (WeaponsDat)transformer.bytesToObject(data.getRawBytes());
-				dtoExport = (WeaponsDatDTO)(new WeaponsDatShellDTOServiceImpl().convertToDTO(weaponsDat));
-			} 
-			else if(data.getFileName().toLowerCase().contains("career")) {
-				transformer = new CareerDataTransformer();
-				CareerMissions career = (CareerMissions)transformer.bytesToObject(data.getRawBytes());
-				dtoExport = (CareerMissionsDTO)(new CareerMissionsDTOServiceImpl().convertToDTO(career));
-			} 
-			break;
-			
-		case GL:
-			transformer = new GunLayoutTransformer();
-			GunLayout gunLayout = (GunLayout)transformer.bytesToObject(data.getRawBytes());
-			dtoExport = (GunLayoutDTO)(new GunLayoutDTOServiceImpl().convertToDTO(gunLayout));
-			break;
-			
-		case PDG:
-			transformer = new PaperDiagramGraphTransformer();
-			PaperDollGraphic pdg = (PaperDollGraphic)transformer.bytesToObject(data.getRawBytes());
-			dtoExport = (PaperDollDTO)(new PaperDollDTOServiceImpl().convertToDTO(pdg));
-			break;
-		default:
-			break;
 		}
-		
-		if(dtoExport != null) {
-			dtoExport.setFileName(fileName);
-			dtoExport.setFileExt(data.getExt().val());
-			dtoExport.setDir(data.getDir().val());
-			write = new File(generatePath(endPathOpen, dirPath, fileName + ".json"));
-			objectMapper.writerWithDefaultPrettyPrinter().writeValue(write, dtoExport);
-			System.out.println("		"+fileName+".json");
+		catch(Exception e) {
+			System.err.println(e.getMessage());
+			System.out.println("---> skipping " + fileName);
 		}
 	}
 }

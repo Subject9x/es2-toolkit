@@ -3,20 +3,32 @@ package org.es2tlk.manager;
 import java.util.Arrays;
 import java.util.List;
 
+import org.hercworks.voln.FileType;
+
 public class MainEntry {
+	
+	public static List<FileType> folderDirs = Arrays.asList(
+			FileType.DAT,
+			FileType.DBA,
+			FileType.DBM,
+			FileType.DMG,
+			FileType.DPL,
+			FileType.FM,
+			FileType.GAM,
+			FileType.GL,
+			FileType.PDG
+	);
 	
 	public static void main(String[] args) {
 		
-		if(args.length > 1) {
-			System.out.println("Too many args");
-			System.exit(1);
-		}
-		
 		if(cmdArgs.INSTALL.values.contains(args[0])) {
-			ES2ModProjectSetup.setupNewProject(args);
+			System.out.println("-> Found install -i arg first, installing.");
+			ES2ModProjectSetup setup = new ES2ModProjectSetup();
+			setup.setupNewProject(args);
 		}
-		if(cmdArgs.COMPILE.values.contains(args[0])) {
-			
+		else if(cmdArgs.COMPILE.values.contains(args[0])) {
+			ES2CompileMod compileMod = new ES2CompileMod();
+			compileMod.compileMod(args);
 		}
 	}
 
