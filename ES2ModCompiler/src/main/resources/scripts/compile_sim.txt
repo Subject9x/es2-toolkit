@@ -3,9 +3,7 @@
 //	+ compiles all known data files for the DBSIM.
 //	+ make sure this file is in your mod directory root.
 module=dbsim
-options=
-//	c : copy, will copy files to <es2 install dirs>
-	
+
 // /DAT
 //	Game data files
 dat/BEAM.DAT.json

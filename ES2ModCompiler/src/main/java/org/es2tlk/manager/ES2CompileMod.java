@@ -5,19 +5,53 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import org.apache.commons.io.FileUtils;
 import org.es2tlk.manager.io.ES2CompileScript;
 import org.es2tlk.manager.io.ModFileJsonProcessor;
 import org.hercworks.core.data.file.dat.shell.ArmHerc;
+import org.hercworks.core.data.file.dat.shell.ArmWeap;
+import org.hercworks.core.data.file.dat.shell.CareerMissions;
+import org.hercworks.core.data.file.dat.shell.HardpointOverlayConfig;
+import org.hercworks.core.data.file.dat.shell.HercInf;
+import org.hercworks.core.data.file.dat.shell.Hercs;
+import org.hercworks.core.data.file.dat.shell.InitHerc;
+import org.hercworks.core.data.file.dat.shell.RprHerc;
+import org.hercworks.core.data.file.dat.shell.TrainingHercs;
+import org.hercworks.core.data.file.dat.shell.WeaponsDat;
 import org.hercworks.core.io.transform.shell.ArmHercTransformer;
+import org.hercworks.core.io.transform.shell.ArmWeapTransformer;
+import org.hercworks.core.io.transform.shell.CareerDataTransformer;
+import org.hercworks.core.io.transform.shell.HardpointOverlayTransformer;
+import org.hercworks.core.io.transform.shell.HercInfoTransformer;
+import org.hercworks.core.io.transform.shell.HercsStartTransformer;
+import org.hercworks.core.io.transform.shell.InitHercTransformer;
+import org.hercworks.core.io.transform.shell.RprHercTransform;
+import org.hercworks.core.io.transform.shell.TrainingHercsTransform;
+import org.hercworks.core.io.transform.shell.WeaponsDatTransformer;
 import org.hercworks.transfer.dto.file.shell.ArmHercDTO;
+import org.hercworks.transfer.dto.file.shell.ArmWeapDTO;
+import org.hercworks.transfer.dto.file.shell.CareerMissionsDTO;
+import org.hercworks.transfer.dto.file.shell.HardpointOverlayDTO;
+import org.hercworks.transfer.dto.file.shell.HercInfDTO;
+import org.hercworks.transfer.dto.file.shell.InitHercDTO;
+import org.hercworks.transfer.dto.file.shell.RepairHercDTO;
+import org.hercworks.transfer.dto.file.shell.StartHercsDTO;
+import org.hercworks.transfer.dto.file.shell.TrainingHercsDTO;
+import org.hercworks.transfer.dto.file.shell.WeaponsDatDTO;
 import org.hercworks.transfer.svc.impl.shell.ArmHercDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.ArmWeapDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.CareerMissionsDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.HardpointOverlayDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.HercInfoDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.InitHercDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.RepairHercDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.StartingHercsDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.TrainingHercsDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.WeaponsDatShellDTOServiceImpl;
 import org.hercworks.voln.DataFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,17 +64,16 @@ public class ES2CompileMod {
 
 	private static String argExport = "-e";
 	private static String argVerbose = "-x";
-	private static String argMod = "-mod_dir=";
+	private static String argMod = "-dir";
 	
-	private static String argKeyShell = "compile_shell";
-	private static String argKeySim = "compile_sim";
+	private static String argKeyScript = ".txt";
 	
-	private static String keyClassDef = "\"class_def\" : \"";
+	private static String keyClassDef = "\"classDef\" : \"";
 	
 	private boolean willInstall = false;
 	private boolean verbose = false;
 	
-	private String modName = "";
+	private String modPath = "";
 	private File modDir;
 	
 	private List<String> scripts;
@@ -51,7 +84,8 @@ public class ES2CompileMod {
 		
 		scripts = new ArrayList<String>();
 		
-		for(String arg : args) {
+		for(int a = 0; a < args.length; a++) {
+			String arg = args[a];
 			if(arg.equalsIgnoreCase(argExport)) {
 				System.out.println(argExport + " = will install mod to root es2/ directory.");
 				willInstall = true;
@@ -60,18 +94,20 @@ public class ES2CompileMod {
 				System.out.println(argVerbose + " = verbose logging output.");
 				verbose = true;
 			}
-			if(arg.toLowerCase().contains(argKeyShell) || arg.toLowerCase().contains(argKeySim)) {
+			if(arg.toLowerCase().contains(argMod)) {
+				if(a + 1 < args.length) {
+					modPath = args[a+1];
+					System.out.println("dir= " + modPath);
+				}
+			}
+			if(arg.toLowerCase().contains(argKeyScript)) {
 				System.out.println("+ add script: " + arg);
 				scripts.add(arg);
 			}
-			if(arg.toLowerCase().contains(argMod)) {
-				modName = arg.substring(arg.indexOf(argMod)+argMod.length());
-				System.out.println("mod_dir= " + modName);
-			}
 		}
 		
-		if(modName.equals("")) {
-			System.err.println("---> ERROR! missing [-dir=] arg with mod folder directory.");
+		if(modPath == null || modPath.equals("")) {
+			System.err.println("---> ERROR! missing [-dir] arg immediately followed by FULL path to mod!");
 			System.exit(1);
 		}
 		
@@ -80,28 +116,24 @@ public class ES2CompileMod {
 			System.exit(1);
 		}
 		
-        try {
-    		URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
-			modDir = new File(Paths.get(url.toURI()).toString() + File.separator + modName);
-			
-			if(!modDir.exists()) {
-				System.err.println("---> ERROR! mod dir [" + modDir.getAbsolutePath() + "] not found!");
-				System.exit(1);
-			}
-			
-			objectMapper = new ObjectMapper();
-			for(String script : scripts) {
-				processCompileScript(script);
-			}
-			
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
+		modDir = new File(modPath);
+		
+		if(!modDir.exists()) {
+			System.err.println("---> ERROR! mod dir [" + modDir.getAbsolutePath() + "] not found!");
+			System.exit(1);
 		}
+		
+		objectMapper = new ObjectMapper();
+		
+		for(String script : scripts) {
+			processCompileScript(script);
+		}
+
 	}
 	
 	private void processCompileScript(String scriptName) {
 		
-		File scriptFile = new File(modDir + File.separator + scriptName);
+		File scriptFile = new File(String.join(File.separator, modDir.getAbsolutePath(), scriptName));
 		
 		if(!scriptFile.exists()){
 			System.err.println("---> ERROR! script file [" + scriptFile.getAbsolutePath() + "] not found!");
@@ -111,7 +143,12 @@ public class ES2CompileMod {
 		ES2CompileScript compileScript = new ES2CompileScript();
 		compileScript.setName(scriptName);
 		compileScript.setPath(scriptFile.getAbsolutePath());
-		compileScript.setDir(scriptFile.getAbsolutePath().substring(0, scriptFile.getAbsolutePath().lastIndexOf(scriptName)));
+		compileScript.setDir(modDir.getAbsolutePath());
+		
+		File exportDir = new File(String.join(File.separator, compileScript.getDir(),"export"));
+		if(!exportDir.exists()) {
+			exportDir.mkdir();
+		}
 		
 		List<String> compileList = new ArrayList<String>();
 		
@@ -153,7 +190,9 @@ public class ES2CompileMod {
 		compileScript.setCompiledResources(new ArrayList<DataFile>());
 		
 		if(compileScript.getTargetExe().equalsIgnoreCase("vshell")) {
+			
 			compileShellResource(compileScript);
+			
 		}
 		else{
 			compileSimResource(compileScript);
@@ -167,7 +206,7 @@ public class ES2CompileMod {
 		processor.init(verbose, null, objectMapper);
 		
 		for(String entry : script.getCompileList()) {
-			File srcFile = new File(script.getDir() + File.separator + entry);
+			File srcFile = new File(String.join(File.separator, script.getDir(), entry));
 			if(srcFile.exists()) {
 				String[] data = readMultilineJsonFile(srcFile);
 			
@@ -179,18 +218,59 @@ public class ES2CompileMod {
 					@SuppressWarnings("unchecked")
 					Class<? extends DataFile> type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dat.shell."+data[0]);
 					
-					DataFile file = null;
+					DataFile compiledDataFileObject = null;
+					System.out.println(data[1]);
+					
 					if(type == ArmHerc.class) {
-						System.out.println(data[1]);
-						file =  processor.importJson(entry, new ArmHercTransformer(), type, new ArmHercDTOServiceImpl(), ArmHercDTO.class);
+						compiledDataFileObject =  processor.importJson(data[1], new ArmHercTransformer(), type, new ArmHercDTOServiceImpl(), ArmHercDTO.class);
+					}
+					else if(type == ArmWeap.class) {
+						compiledDataFileObject =  processor.importJson(data[1], new ArmWeapTransformer(), type, new ArmWeapDTOServiceImpl(), ArmWeapDTO.class);
+					}
+					else if(type == CareerMissions.class) {
+						compiledDataFileObject =  processor.importJson(data[1], new CareerDataTransformer(), type, new CareerMissionsDTOServiceImpl(), CareerMissionsDTO.class);
+					}
+					else if(type == HardpointOverlayConfig.class) {
+						compiledDataFileObject =  processor.importJson(data[1], new HardpointOverlayTransformer(), type, new HardpointOverlayDTOServiceImpl(), HardpointOverlayDTO.class);
+					}
+					else if(type == HercInf.class) {
+						compiledDataFileObject =  processor.importJson(data[1], new HercInfoTransformer(), type, new HercInfoDTOServiceImpl(), HercInfDTO.class);
+					}
+					else if(type == Hercs.class) {
+						compiledDataFileObject =  processor.importJson(data[1], new HercsStartTransformer(), type, new StartingHercsDTOServiceImpl(), StartHercsDTO.class);
+					}
+					else if(type == InitHerc.class) {
+						compiledDataFileObject =  processor.importJson(data[1], new InitHercTransformer(), type, new InitHercDTOServiceImpl(), InitHercDTO.class);
+					}
+					else if(type == RprHerc.class) {
+						compiledDataFileObject =  processor.importJson(data[1], new RprHercTransform(), type, new RepairHercDTOServiceImpl(), RepairHercDTO.class);
+					}
+					else if(type == TrainingHercs.class) {
+						compiledDataFileObject =  processor.importJson(data[1], new TrainingHercsTransform(), type, new TrainingHercsDTOServiceImpl(), TrainingHercsDTO.class);
+					}
+					else if(type == WeaponsDat.class) {
+						compiledDataFileObject =  processor.importJson(data[1], new WeaponsDatTransformer(), type, new WeaponsDatShellDTOServiceImpl(), WeaponsDatDTO.class);
 					}
 					
-					if(file != null) {
-						script.getCompiledResources().add(file);
+					if(compiledDataFileObject != null) {
+						script.getCompiledResources().add(compiledDataFileObject);
+						File destDir = new File(String.join(File.separator, script.getDir(), "export",  compiledDataFileObject.getDir().val()));
+						if(!destDir.exists()) {
+							if(!destDir.mkdir()) {
+								System.err.print("--->ERROR! failed to make export directory [" + destDir.getAbsolutePath() + "]");
+								continue;
+							}
+						}
+						File exportedFile = new File(String.join(File.separator, destDir.getAbsolutePath(), compiledDataFileObject.getFileName() 
+								+ "." + compiledDataFileObject.getExt().val()));
+						
+						FileUtils.writeByteArrayToFile(exportedFile, compiledDataFileObject.getRawBytes());
 					}
-					
 					
 				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+					continue;
+				} catch (IOException e) {
 					e.printStackTrace();
 					continue;
 				}
@@ -207,6 +287,9 @@ public class ES2CompileMod {
 	}
 	
 	
+	
+	
+	
 	private String[] readMultilineJsonFile(File file) {
 		String[] ret = new String[2];
 		
@@ -216,7 +299,7 @@ public class ES2CompileMod {
 			while(buffer.ready()) {
 				String line = buffer.readLine();
 				parsedString.append(line);
-				if(line.contains("class_def")) {
+				if(line.contains("classDef")) {
 					int classDefIdx = line.lastIndexOf(keyClassDef) ;
 					ret[0] = line.substring(classDefIdx + keyClassDef.length() , line.lastIndexOf('\"'));
 				}

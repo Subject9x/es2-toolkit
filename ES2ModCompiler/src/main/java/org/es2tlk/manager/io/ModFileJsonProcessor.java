@@ -39,16 +39,10 @@ public class ModFileJsonProcessor {
 			compiledFile = dtoService.fromDTO(dto);
 			compiledFile = dataClass.cast(compiledFile);
 		
-			((DataFile)compiledFile).setFileName(getCleanFileName(fileNoExt(file)));
-			
-			//make file name accessible to the transformer
-			String fileName = ((DataFile)compiledFile).getFileName();
-			String cleanFileName = new String(fileName.substring(0,
-					fileName.lastIndexOf(".")));
-			
+			((DataFile)compiledFile).setFileName(dto.getFileName());
+
 			byte[] data = transformerClass.objectToBytes(compiledFile);
 			compiledFile.setRawBytes(data);
-			
 		} catch(Exception e) {
 			e.printStackTrace();
 		}

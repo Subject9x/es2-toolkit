@@ -3,10 +3,7 @@
 //	+ compiles all known data files for the SHELL.
 //	+ make sure this file is in your mod directory root.
 module=vshell
-options=
-	c : copy, will copy files to <es2 install dirs>
-	o : overwrite, will overwrite existing files in those dirs (original install unaffected).
-	
+
 // /GAM files
 //	HARDPOINT/ARMING data	
 gam/ARM_APOC.DAT.json
@@ -20,11 +17,11 @@ gam/ARM_RAZR.DAT.json
 gam/ARM_SAMS.DAT.json
 gam/ARM_TOMA.DAT.json
 gam/ARM_WEAP.DAT.json
+gam/ARM_HOTS.DAT.json
 
 //	REPAIR data
 gam/RPR_APOC.DAT.json
 gam/RPR_COLO.DAT.json
-gam/RPR_HOTS.DAT.json
 gam/RPR_MAVR.DAT.json
 gam/RPR_OGRE.DAT.json
 gam/RPR_OUTL.DAT.json
@@ -32,11 +29,11 @@ gam/RPR_RAPT.DAT.json
 gam/RPR_RAZR.DAT.json
 gam/RPR_SAMS.DAT.json
 gam/RPR_TOMA.DAT.json
+gam/RPR_HOTS.DAT.json
 
 //	INI (instant action) data
 gam/INI_APOC.DAT.json
 gam/INI_COLO.DAT.json
-gam/INI_HOTS.DAT.json
 gam/INI_MAVR.DAT.json
 gam/INI_OGRE.DAT.json
 gam/INI_OUTL.DAT.json

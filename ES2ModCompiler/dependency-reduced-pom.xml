@@ -117,7 +117,7 @@
               </filters>
               <transformers>
                 <transformer>
-                  <mainClass>org.es2tlk.manager.ES2ModProjectSetup</mainClass>
+                  <mainClass>org.es2tlk.manager.MainEntry</mainClass>
                 </transformer>
               </transformers>
             </configuration>

@@ -1,14 +1,13 @@
 package org.es2tlk.manager.io;
 
-import java.util.HashMap;
 import java.util.List;
 
 import org.hercworks.voln.DataFile;
-import org.hercworks.voln.FileType;
 
 public class ES2CompileScript {
 
 	public static String keyModule = "module=";
+	
 	public static String vshell = "VSHELL";
 	public static String dbsim = "DBSIM";
 	

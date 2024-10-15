@@ -19,6 +19,7 @@ import org.hercworks.core.data.file.dat.shell.HercInf;
 import org.hercworks.core.data.file.dat.shell.Hercs;
 import org.hercworks.core.data.file.dat.shell.InitHerc;
 import org.hercworks.core.data.file.dat.shell.RprHerc;
+import org.hercworks.core.data.file.dat.shell.TrainingHercs;
 import org.hercworks.core.data.file.dat.shell.WeaponsDat;
 import org.hercworks.core.data.file.dat.sim.BeamData;
 import org.hercworks.core.data.file.dat.sim.HercSimDat;
@@ -49,6 +50,7 @@ import org.hercworks.core.io.transform.shell.HercInfoTransformer;
 import org.hercworks.core.io.transform.shell.HercsStartTransformer;
 import org.hercworks.core.io.transform.shell.InitHercTransformer;
 import org.hercworks.core.io.transform.shell.RprHercTransform;
+import org.hercworks.core.io.transform.shell.TrainingHercsTransform;
 import org.hercworks.core.io.transform.shell.WeaponsDatTransformer;
 import org.hercworks.transfer.dto.file.TransferObject;
 import org.hercworks.transfer.dto.file.shell.ArmHercDTO;
@@ -59,6 +61,7 @@ import org.hercworks.transfer.dto.file.shell.HercInfDTO;
 import org.hercworks.transfer.dto.file.shell.InitHercDTO;
 import org.hercworks.transfer.dto.file.shell.RepairHercDTO;
 import org.hercworks.transfer.dto.file.shell.StartHercsDTO;
+import org.hercworks.transfer.dto.file.shell.TrainingHercsDTO;
 import org.hercworks.transfer.dto.file.shell.WeaponsDatDTO;
 import org.hercworks.transfer.dto.file.sim.BeamDatDTO;
 import org.hercworks.transfer.dto.file.sim.FlightModelDTO;
@@ -74,6 +77,7 @@ import org.hercworks.transfer.svc.impl.dbsim.FlightModelDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.GunLayoutDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.HercSimDataDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.HercSimDmgDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.MissileDatDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.PaperDollDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.ProjectileDatDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.WeapnPDGDTOServiceImpl;
@@ -85,6 +89,7 @@ import org.hercworks.transfer.svc.impl.shell.HercInfoDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.shell.InitHercDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.shell.RepairHercDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.shell.StartingHercsDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.shell.TrainingHercsDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.shell.WeaponsDatShellDTOServiceImpl;
 import org.hercworks.voln.DataFile;
 import org.hercworks.voln.FileType;
@@ -105,7 +110,7 @@ public final class ES2ModProjectSetup {
 	public void setupNewProject(String[] args) {
 		
 		String pathES2Install = null;
-		String modProjName = null;
+		String inputModPath = null;
 		String modAuthor = null;
 		String modPath = null;
 		
@@ -132,15 +137,16 @@ public final class ES2ModProjectSetup {
 			System.exit(1);
 		}
 		
-		System.out.print("Mod Project Name=");
+		
+		System.out.print("Mod Path and Name=");
 		try {
-			modProjName = consoleRead.readLine();
+			inputModPath = consoleRead.readLine();
 		} catch (IOException e) {
 			System.err.println(e.getMessage());
 			System.exit(-1);
 		}
 		
-		if(modProjName == null || modProjName.length() == 0) {
+		if(inputModPath == null || inputModPath.length() == 0) {
 			System.err.println("Project name cannot be empty.");
 			System.exit(1);
 		}
@@ -153,8 +159,7 @@ public final class ES2ModProjectSetup {
 			System.exit(-1);
 		}
 		
-		
-		File modRoot = new File(generatePath(endAsDir, es2InstallDir.getAbsolutePath(), "mods"));
+		File modRoot = new File(inputModPath);
 		if(!modRoot.exists()) {
 			if(!modRoot.mkdir()) {
 				System.err.println("/mods dir couldn't be created.");
@@ -162,31 +167,19 @@ public final class ES2ModProjectSetup {
 			}
 		}
 		
-		modPath = generatePath(endAsDir, modRoot.getAbsolutePath(), modProjName);
-		
-		File modDir = new File(modPath);
-		if(modDir.exists()) {
-			System.err.println("Dir[" + modPath + "] already in use!");
-			System.exit(2);
-		}
-		
-		if(!modDir.mkdirs()) {
-			System.err.println("Dir[" + modPath + "] couldn't be created.");
-			System.exit(2);
-		}
 		System.out.println("---creating mod dir---");
 		System.out.println(modPath);
 		
 		ES2ModInfo projectData = new ES2ModInfo();
-		projectData.setProperty(ES2ModInfo.projDir, modPath);
-		projectData.setProperty(ES2ModInfo.projName, modProjName);
+		projectData.setProperty(ES2ModInfo.projDir, modRoot.getAbsolutePath());
+		projectData.setProperty(ES2ModInfo.projName, inputModPath);
 		projectData.setProperty(ES2ModInfo.projAuthor, modAuthor);
-		saveProjectConfig(projectData, modPath);
+		saveProjectConfig(projectData, modRoot.getAbsolutePath());
 
 		objectMapper = new ObjectMapper();
 		try {
-			shell0 = VolFileReader.parseVolFile(generatePath(endPathOpen, es2InstallDir.getAbsolutePath(), "VOL", "SHELL0.VOL"));
-			simvol0 = VolFileReader.parseVolFile(generatePath(endPathOpen, es2InstallDir.getAbsolutePath(), "VOL", "SIMVOL0.VOL"));
+			shell0 = VolFileReader.parseVolFile(String.join(File.separator, es2InstallDir.getAbsolutePath(), "VOL", "SHELL0.VOL"));
+			simvol0 = VolFileReader.parseVolFile(String.join(File.separator, es2InstallDir.getAbsolutePath(), "VOL", "SIMVOL0.VOL"));
 			
 			if(shell0 == null || simvol0 == null) {
 				throw new NullPointerException();				
@@ -196,18 +189,16 @@ public final class ES2ModProjectSetup {
 			System.exit(-1);
 		}
 		
-		File refDirs = new File(generatePath(endAsDir, modRoot.getAbsolutePath(), "REF"));
+		File refDirs = new File(String.join(File.separator,  modRoot.getAbsolutePath(), "REF"));
 		if(!refDirs.exists()) {
 			if(refDirs.mkdir()) {
 				System.out.println("---Installing reference data files from .vol---");
 				System.out.println("---> REF folders");
 				
-
-				
-				File srcShell0Dir = new File(generatePath(endAsDir, refDirs.getAbsolutePath(), "SHELL0"));
+				File srcShell0Dir = new File(String.join(File.separator,  refDirs.getAbsolutePath(), "SHELL0"));
 				srcShell0Dir.mkdir();
 				
-				File srcSimVol0Dir = new File(generatePath(endAsDir, refDirs.getAbsolutePath(), "SIMVOL0"));
+				File srcSimVol0Dir = new File(String.join(File.separator,  refDirs.getAbsolutePath(), "SIMVOL0"));
 				srcSimVol0Dir.mkdir();
 				
 				populateExportedVolDirs(shell0, srcShell0Dir.getAbsolutePath(), true);
@@ -221,22 +212,22 @@ public final class ES2ModProjectSetup {
 
 		System.out.println("---setting up mod---");
 		
-		populateSrcDirs(shell0, modDir.getAbsolutePath());
-		populateSrcDirs(simvol0, modDir.getAbsolutePath());
+		populateSrcDirs(shell0, modRoot.getAbsolutePath());
+		populateSrcDirs(simvol0, modRoot.getAbsolutePath());
 		
 		//Build output make folder
 		URL cmpShellUrl = this.getClass().getResource("/scripts/compile_shell.txt");
 		URL cmpSimUrl = this.getClass().getResource("/scripts/compile_sim.txt");
 		
 		try {
-			FileUtils.copyURLToFile(cmpShellUrl, new File(generatePath(endPathOpen, modDir.getAbsolutePath(), "compile_shell.txt")));
-			FileUtils.copyURLToFile(cmpSimUrl, new File(generatePath(endPathOpen, modDir.getAbsolutePath(), "compile_sim.txt")));
+			FileUtils.copyURLToFile(cmpShellUrl, new File(String.join(File.separator, modRoot.getAbsolutePath(), "compile_shell.txt")));
+			FileUtils.copyURLToFile(cmpSimUrl, new File(String.join(File.separator, modRoot.getAbsolutePath(), "compile_sim.txt")));
 			
 		} catch (IOException e) {
 			System.err.println(e.getMessage());
 		}
 		
-		new File(generatePath(endAsDir, modDir.getAbsolutePath(), "export")).mkdir();
+		new File(generatePath(endAsDir, modRoot.getAbsolutePath(), "export")).mkdir();
 		
 		System.out.println("Mod setup complete!");
 		System.exit(10);
@@ -264,7 +255,7 @@ public final class ES2ModProjectSetup {
 		//generatePath(endPathOpen, modRootPath, "info.txt")
 		BufferedWriter writer;
 		try {
-			writer = new BufferedWriter(new FileWriter(new File(generatePath(endPathOpen, modRootPath, "info.txt"))));
+			writer = new BufferedWriter(new FileWriter(new File(String.join(File.separator, modRootPath, "info.txt"))));
 			writer.write(ES2ModInfo.projDir + "=" + info.getProperty(ES2ModInfo.projDir)+"\n");
 			writer.write(ES2ModInfo.projName + "=" + info.getProperty(ES2ModInfo.projName)+"\n");
 			writer.write(ES2ModInfo.projAuthor + "=" + info.getProperty(ES2ModInfo.projAuthor)+"\n");
@@ -282,7 +273,7 @@ public final class ES2ModProjectSetup {
 	 */
 	private static void extractVolFile(DataFile data, String dirPath) throws IOException {
 		
-		File export = new File(generatePath(endPathOpen, dirPath, data.getFileName()));
+		File export = new File(String.join(File.separator, dirPath, data.getFileName()));
 		
 		try(FileOutputStream out = new FileOutputStream(export)){
 			out.write(data.getRawBytes());
@@ -301,9 +292,9 @@ public final class ES2ModProjectSetup {
 	private static void populateExportedVolDirs(Voln vol, String volExportDir, boolean extractfiles) {
 		for(VolDir dir : vol.getFolders().values()) {
 			if(MainEntry.folderDirs.contains(FileType.typeFromVal(dir.getLabel()))) {
-				File srcDir = new File(generatePath(endAsDir, volExportDir, dir.getLabel().toUpperCase()));
+				File srcDir = new File(String.join(File.separator, volExportDir, dir.getLabel().toUpperCase()));
 				srcDir.mkdir();
-				System.out.println("	" + generatePath(endAsDir, Voln.makeFileName(vol.getFileName()), dir.getLabel().toUpperCase()));
+				System.out.println("	" + String.join(File.separator, Voln.makeFileName(vol.getFileName()), dir.getLabel().toUpperCase()));
 				if(extractfiles) {
 					if(srcDir.exists()) {
 						for(DataFile volFile : dir.getFiles()) {
@@ -322,9 +313,9 @@ public final class ES2ModProjectSetup {
 	private static void populateSrcDirs(Voln vol, String srcExportDir) {
 		for(VolDir dir : vol.getFolders().values()) {
 			if(MainEntry.folderDirs.contains(FileType.typeFromVal(dir.getLabel()))) {
-				File srcDir = new File(generatePath(endAsDir, srcExportDir, dir.getLabel().toUpperCase()));
+				File srcDir = new File(String.join(File.separator, srcExportDir, dir.getLabel().toUpperCase()));
 				srcDir.mkdir();
-				System.out.println("	" + generatePath(endAsDir, Voln.makeFileName(vol.getFileName()), dir.getLabel().toUpperCase()));
+				System.out.println("	" + String.join(File.separator, Voln.makeFileName(vol.getFileName()), dir.getLabel().toUpperCase()));
 				
 				if(srcDir.exists()) {
 					for(DataFile volFile : dir.getFiles()) {
@@ -386,7 +377,7 @@ public final class ES2ModProjectSetup {
 					transformer = new MissileDatFileTransformer();
 					MissileDatFile missiles = (MissileDatFile)transformer.bytesToObject(data.getRawBytes());
 					missiles.setFileName(data.originNameNoExt());
-					dtoExport = (MissileDatDTO)(new HercSimDataDTOServiceImpl().convertToDTO(missiles));
+					dtoExport = (MissileDatDTO)(new MissileDatDTOServiceImpl().convertToDTO(missiles));
 				}
 				
 				break;
@@ -429,6 +420,11 @@ public final class ES2ModProjectSetup {
 					transformer = new ArmHercTransformer();
 					ArmHerc armHerc = (ArmHerc)transformer.bytesToObject(data.getRawBytes());
 					dtoExport = (ArmHercDTO)(new ArmHercDTOServiceImpl().convertToDTO(armHerc));
+				}
+				else if(data.getFileName().toLowerCase().contains("trn_herc")) {
+					transformer = new TrainingHercsTransform();
+					TrainingHercs trnHerc = (TrainingHercs)transformer.bytesToObject(data.getRawBytes());
+					dtoExport = (TrainingHercsDTO)(new TrainingHercsDTOServiceImpl().convertToDTO(trnHerc));
 				}
 				else if(data.getFileName().toLowerCase().contains("herc_inf")) {
 					transformer = new HercInfoTransformer();
@@ -479,13 +475,11 @@ public final class ES2ModProjectSetup {
 				String fileOut = fileName + "." + data.getExt().val().toUpperCase() +".json";
 				
 				dtoExport.setFileName(fileName);
-				dtoExport.setFileExt(data.getExt().val());
-				dtoExport.setDir(data.getDir().val());
 				
-				write = new File(generatePath(endPathOpen, dirPath, fileOut));
+				write = new File(String.join(File.separator, dirPath, fileOut));
 				objectMapper.writerWithDefaultPrettyPrinter().writeValue(write, dtoExport);
 				
-				System.out.println("		"+fileOut);
+				System.out.println("		" + fileOut);
 			}
 		}
 		catch(Exception e) {
