@@ -2,9 +2,9 @@
 //ThreeSpace 2.0 / Earthsiege 2 version.
 //
 //copy to target folder of DBMs.
-dbm_dir=<dbm directory path>
+dbm_dir=<dbm directory path>/
 dba_name=<name.DBA>
-dba_out=<dba output path>
+dba_out=<dba output path>/
 mode=<DBM|DB0|DB1|DBA2>
 
 //list order is compile order

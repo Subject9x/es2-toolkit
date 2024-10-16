@@ -22,6 +22,19 @@ import org.hercworks.core.data.file.dat.shell.InitHerc;
 import org.hercworks.core.data.file.dat.shell.RprHerc;
 import org.hercworks.core.data.file.dat.shell.TrainingHercs;
 import org.hercworks.core.data.file.dat.shell.WeaponsDat;
+import org.hercworks.core.data.file.dat.sim.BeamData;
+import org.hercworks.core.data.file.dat.sim.HercSimDat;
+import org.hercworks.core.data.file.dat.sim.MissileDatFile;
+import org.hercworks.core.data.file.dat.sim.ProjectileData;
+import org.hercworks.core.io.transform.dbsim.BeamDatFileTransformer;
+import org.hercworks.core.io.transform.dbsim.FlightModelTransformer;
+import org.hercworks.core.io.transform.dbsim.GunLayoutTransformer;
+import org.hercworks.core.io.transform.dbsim.HercDamageFileTransformer;
+import org.hercworks.core.io.transform.dbsim.HercSimDataTransformer;
+import org.hercworks.core.io.transform.dbsim.MissileDatFileTransformer;
+import org.hercworks.core.io.transform.dbsim.PaperDiagramGraphTransformer;
+import org.hercworks.core.io.transform.dbsim.ProjectileDataTransformer;
+import org.hercworks.core.io.transform.dbsim.WeaponPDGTransformer;
 import org.hercworks.core.io.transform.shell.ArmHercTransformer;
 import org.hercworks.core.io.transform.shell.ArmWeapTransformer;
 import org.hercworks.core.io.transform.shell.CareerDataTransformer;
@@ -42,6 +55,24 @@ import org.hercworks.transfer.dto.file.shell.RepairHercDTO;
 import org.hercworks.transfer.dto.file.shell.StartHercsDTO;
 import org.hercworks.transfer.dto.file.shell.TrainingHercsDTO;
 import org.hercworks.transfer.dto.file.shell.WeaponsDatDTO;
+import org.hercworks.transfer.dto.file.sim.BeamDatDTO;
+import org.hercworks.transfer.dto.file.sim.FlightModelDTO;
+import org.hercworks.transfer.dto.file.sim.GunLayoutDTO;
+import org.hercworks.transfer.dto.file.sim.HercDmgDTO;
+import org.hercworks.transfer.dto.file.sim.HercSimDatDTO;
+import org.hercworks.transfer.dto.file.sim.MissileDatDTO;
+import org.hercworks.transfer.dto.file.sim.PaperDollDTO;
+import org.hercworks.transfer.dto.file.sim.ProjectileDataDTO;
+import org.hercworks.transfer.dto.file.sim.WpnPDGDTO;
+import org.hercworks.transfer.svc.impl.dbsim.BeamDatDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.FlightModelDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.GunLayoutDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.HercSimDataDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.HercSimDmgDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.MissileDatDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.PaperDollDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.ProjectileDatDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.WeapnPDGDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.shell.ArmHercDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.shell.ArmWeapDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.shell.CareerMissionsDTOServiceImpl;
@@ -219,7 +250,7 @@ public class ES2CompileMod {
 					Class<? extends DataFile> type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dat.shell."+data[0]);
 					
 					DataFile compiledDataFileObject = null;
-					System.out.println(data[1]);
+					//System.out.println(data[1]); //XXX - developer debug only
 					
 					if(type == ArmHerc.class) {
 						compiledDataFileObject =  processor.importJson(data[1], new ArmHercTransformer(), type, new ArmHercDTOServiceImpl(), ArmHercDTO.class);
@@ -265,6 +296,8 @@ public class ES2CompileMod {
 								+ "." + compiledDataFileObject.getExt().val()));
 						
 						FileUtils.writeByteArrayToFile(exportedFile, compiledDataFileObject.getRawBytes());
+						
+						System.out.println("---> compiled: " + entry);
 					}
 					
 				} catch (ClassNotFoundException e) {
@@ -282,12 +315,99 @@ public class ES2CompileMod {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void compileSimResource(ES2CompileScript script) {
+		ModFileJsonProcessor processor = new ModFileJsonProcessor();
+		processor.init(verbose, null, objectMapper);
+		
+		for(String entry : script.getCompileList()) {
+			File srcFile = new File(String.join(File.separator, script.getDir(), entry));
+			if(srcFile.exists()) {
+				String[] data = readMultilineJsonFile(srcFile);
 			
+				if(data[0] == null || data[0].equals("")) {
+					System.err.print("Error!\n     missing class_def field for [" + entry +"], skipping compile");
+					continue;
+				}
+				try {
+					String packagePath = "org.hercworks.core.data.file.";
+					Class<? extends DataFile> type;
+					DataFile compiledDataFileObject = null;
+					
+					if(data[0].equalsIgnoreCase("FlightModel")) {
+						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dbsim."+data[0]);
+						compiledDataFileObject =  processor.importJson(data[1], new FlightModelTransformer(), type, new FlightModelDTOServiceImpl(), FlightModelDTO.class);
+					}
+					else if(data[0].equalsIgnoreCase("GunLayout")) {
+						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dbsim."+data[0]);
+						compiledDataFileObject =  processor.importJson(data[1], new GunLayoutTransformer(), type, new GunLayoutDTOServiceImpl(), GunLayoutDTO.class);
+					}
+					else if(data[0].equalsIgnoreCase("HercSimDamage")) {
+						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dbsim."+data[0]);
+						compiledDataFileObject =  processor.importJson(data[1], new HercDamageFileTransformer(), type, new HercSimDmgDTOServiceImpl(), HercDmgDTO.class);
+						
+					}
+					else if(data[0].equalsIgnoreCase("PaperDollGraphic")) {
+						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dbsim."+data[0]);
+						compiledDataFileObject =  processor.importJson(data[1], new PaperDiagramGraphTransformer(), type, new PaperDollDTOServiceImpl(), PaperDollDTO.class);
+					}
+					else if(data[0].equalsIgnoreCase("WeaponPaperDiagram")) {
+						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dbsim."+data[0]);
+						compiledDataFileObject =  processor.importJson(data[1], new WeaponPDGTransformer(), type, new WeapnPDGDTOServiceImpl(), WpnPDGDTO.class);
+					}
+					else {
+						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dat.sim."+data[0]);
+						
+						//System.out.println(data[1]); //XXX - developer debug only
+						
+						if(type == BeamData.class) {
+							compiledDataFileObject =  processor.importJson(data[1], new BeamDatFileTransformer(), type, new BeamDatDTOServiceImpl(), BeamDatDTO.class);
+						}
+						else if(type == HercSimDat.class) {
+							compiledDataFileObject =  processor.importJson(data[1], new HercSimDataTransformer(), type, new HercSimDataDTOServiceImpl(), HercSimDatDTO.class);
+						}
+						else if(type == MissileDatFile.class) {
+							compiledDataFileObject =  processor.importJson(data[1], new MissileDatFileTransformer(), type, new MissileDatDTOServiceImpl(), MissileDatDTO.class);
+						}
+						else if(type == ProjectileData.class) {
+							compiledDataFileObject =  processor.importJson(data[1], new ProjectileDataTransformer(), type, new ProjectileDatDTOServiceImpl(), ProjectileDataDTO.class);
+						}
+//						else if(type == Weapons.class) {
+//							compiledDataFileObject =  processor.importJson(data[1], new Weapons(), type, new HercInfoDTOServiceImpl(), HercInfDTO.class);
+//						}
+					}
+					
+					if(compiledDataFileObject != null) {
+						script.getCompiledResources().add(compiledDataFileObject);
+						File destDir = new File(String.join(File.separator, script.getDir(), "export",  compiledDataFileObject.getDir().val()));
+						if(!destDir.exists()) {
+							if(!destDir.mkdir()) {
+								System.err.print("--->ERROR! failed to make export directory [" + destDir.getAbsolutePath() + "]");
+								continue;
+							}
+						}
+						File exportedFile = new File(String.join(File.separator, destDir.getAbsolutePath(), compiledDataFileObject.getFileName() 
+								+ "." + compiledDataFileObject.getExt().val()));
+						
+						FileUtils.writeByteArrayToFile(exportedFile, compiledDataFileObject.getRawBytes());
+						
+						System.out.println("---> compiled: " + entry);
+					}
+					
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+					continue;
+				} catch (IOException e) {
+					e.printStackTrace();
+					continue;
+				}
+				
+			}
+			else {
+				System.out.println("---> skipping " + entry + ", bad path [" + srcFile.getAbsolutePath() + "].");
+			}	
+		}
 	}
-	
-	
-	
 	
 	
 	private String[] readMultilineJsonFile(File file) {

@@ -139,7 +139,7 @@ public class UnpackDBA {
 					dplLoaded = false;
 					System.out.println("--->Warn! ");
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
+					dplLoaded = false;
 					e.printStackTrace();
 				}
 			}

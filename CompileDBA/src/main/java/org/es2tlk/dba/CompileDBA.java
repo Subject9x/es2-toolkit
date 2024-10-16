@@ -29,7 +29,7 @@ public class CompileDBA {
 	
 	public static void main(String[] args) {
 		
-		System.out.println("1. Copy assemble.txt to the directory with .DBM files.");
+		System.out.println("1. Copy assembleDBA.txt to the directory with .DBM files.");
 		System.out.println("2. Fill out fields.");
 		System.out.print("3. Please enter path and name of assembly file=");
 		BufferedReader consoleRead = new BufferedReader(new InputStreamReader(System.in));
