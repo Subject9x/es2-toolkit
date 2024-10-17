@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.es2tlk.manager.io.ES2CompileScript;
@@ -99,7 +101,7 @@ public class ES2CompileMod {
 	
 	private static String argKeyScript = ".txt";
 	
-	private static String keyClassDef = "\"classDef\" : \"";
+	private static String classDefRegex = "\"classDef\":\"[a-zA-Z]+\"";
 	
 	private boolean willInstall = false;
 	private boolean verbose = false;
@@ -229,6 +231,7 @@ public class ES2CompileMod {
 			compileSimResource(compileScript);
 		}
 		
+		System.out.println("----------------- Script Complete");
 
 	}
 	
@@ -239,48 +242,50 @@ public class ES2CompileMod {
 		for(String entry : script.getCompileList()) {
 			File srcFile = new File(String.join(File.separator, script.getDir(), entry));
 			if(srcFile.exists()) {
-				String[] data = readMultilineJsonFile(srcFile);
-			
-				if(data[0] == null || data[0].equals("")) {
+				String data = readMultilineJsonFile(srcFile);
+				String classDef = readClassDefInJson(data);
+				
+				if(classDef == null) {
 					System.err.print("Error!\n     missing class_def field for [" + entry +"], skipping compile");
 					continue;
 				}
+				
 				try {
 					@SuppressWarnings("unchecked")
-					Class<? extends DataFile> type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dat.shell."+data[0]);
+					Class<? extends DataFile> type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dat.shell." + classDef);
 					
 					DataFile compiledDataFileObject = null;
-					//System.out.println(data[1]); //XXX - developer debug only
+					//System.out.println(data); //XXX - developer debug only
 					
 					if(type == ArmHerc.class) {
-						compiledDataFileObject =  processor.importJson(data[1], new ArmHercTransformer(), type, new ArmHercDTOServiceImpl(), ArmHercDTO.class);
+						compiledDataFileObject =  processor.importJson(data, new ArmHercTransformer(), type, new ArmHercDTOServiceImpl(), ArmHercDTO.class);
 					}
 					else if(type == ArmWeap.class) {
-						compiledDataFileObject =  processor.importJson(data[1], new ArmWeapTransformer(), type, new ArmWeapDTOServiceImpl(), ArmWeapDTO.class);
+						compiledDataFileObject =  processor.importJson(data, new ArmWeapTransformer(), type, new ArmWeapDTOServiceImpl(), ArmWeapDTO.class);
 					}
 					else if(type == CareerMissions.class) {
-						compiledDataFileObject =  processor.importJson(data[1], new CareerDataTransformer(), type, new CareerMissionsDTOServiceImpl(), CareerMissionsDTO.class);
+						compiledDataFileObject =  processor.importJson(data, new CareerDataTransformer(), type, new CareerMissionsDTOServiceImpl(), CareerMissionsDTO.class);
 					}
 					else if(type == HardpointOverlayConfig.class) {
-						compiledDataFileObject =  processor.importJson(data[1], new HardpointOverlayTransformer(), type, new HardpointOverlayDTOServiceImpl(), HardpointOverlayDTO.class);
+						compiledDataFileObject =  processor.importJson(data, new HardpointOverlayTransformer(), type, new HardpointOverlayDTOServiceImpl(), HardpointOverlayDTO.class);
 					}
 					else if(type == HercInf.class) {
-						compiledDataFileObject =  processor.importJson(data[1], new HercInfoTransformer(), type, new HercInfoDTOServiceImpl(), HercInfDTO.class);
+						compiledDataFileObject =  processor.importJson(data, new HercInfoTransformer(), type, new HercInfoDTOServiceImpl(), HercInfDTO.class);
 					}
 					else if(type == Hercs.class) {
-						compiledDataFileObject =  processor.importJson(data[1], new HercsStartTransformer(), type, new StartingHercsDTOServiceImpl(), StartHercsDTO.class);
+						compiledDataFileObject =  processor.importJson(data, new HercsStartTransformer(), type, new StartingHercsDTOServiceImpl(), StartHercsDTO.class);
 					}
 					else if(type == InitHerc.class) {
-						compiledDataFileObject =  processor.importJson(data[1], new InitHercTransformer(), type, new InitHercDTOServiceImpl(), InitHercDTO.class);
+						compiledDataFileObject =  processor.importJson(data, new InitHercTransformer(), type, new InitHercDTOServiceImpl(), InitHercDTO.class);
 					}
 					else if(type == RprHerc.class) {
-						compiledDataFileObject =  processor.importJson(data[1], new RprHercTransform(), type, new RepairHercDTOServiceImpl(), RepairHercDTO.class);
+						compiledDataFileObject =  processor.importJson(data, new RprHercTransform(), type, new RepairHercDTOServiceImpl(), RepairHercDTO.class);
 					}
 					else if(type == TrainingHercs.class) {
-						compiledDataFileObject =  processor.importJson(data[1], new TrainingHercsTransform(), type, new TrainingHercsDTOServiceImpl(), TrainingHercsDTO.class);
+						compiledDataFileObject =  processor.importJson(data, new TrainingHercsTransform(), type, new TrainingHercsDTOServiceImpl(), TrainingHercsDTO.class);
 					}
 					else if(type == WeaponsDat.class) {
-						compiledDataFileObject =  processor.importJson(data[1], new WeaponsDatTransformer(), type, new WeaponsDatShellDTOServiceImpl(), WeaponsDatDTO.class);
+						compiledDataFileObject =  processor.importJson(data, new WeaponsDatTransformer(), type, new WeaponsDatShellDTOServiceImpl(), WeaponsDatDTO.class);
 					}
 					
 					if(compiledDataFileObject != null) {
@@ -323,9 +328,10 @@ public class ES2CompileMod {
 		for(String entry : script.getCompileList()) {
 			File srcFile = new File(String.join(File.separator, script.getDir(), entry));
 			if(srcFile.exists()) {
-				String[] data = readMultilineJsonFile(srcFile);
-			
-				if(data[0] == null || data[0].equals("")) {
+				String data = readMultilineJsonFile(srcFile);
+				String classDef = readClassDefInJson(data);
+				
+				if(classDef == null) {
 					System.err.print("Error!\n     missing class_def field for [" + entry +"], skipping compile");
 					continue;
 				}
@@ -334,46 +340,46 @@ public class ES2CompileMod {
 					Class<? extends DataFile> type;
 					DataFile compiledDataFileObject = null;
 					
-					if(data[0].equalsIgnoreCase("FlightModel")) {
-						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dbsim."+data[0]);
-						compiledDataFileObject =  processor.importJson(data[1], new FlightModelTransformer(), type, new FlightModelDTOServiceImpl(), FlightModelDTO.class);
+					if(classDef.equalsIgnoreCase("FlightModel")) {
+						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dbsim."+classDef);
+						compiledDataFileObject =  processor.importJson(data, new FlightModelTransformer(), type, new FlightModelDTOServiceImpl(), FlightModelDTO.class);
 					}
-					else if(data[0].equalsIgnoreCase("GunLayout")) {
-						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dbsim."+data[0]);
-						compiledDataFileObject =  processor.importJson(data[1], new GunLayoutTransformer(), type, new GunLayoutDTOServiceImpl(), GunLayoutDTO.class);
+					else if(classDef.equalsIgnoreCase("GunLayout")) {
+						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dbsim."+classDef);
+						compiledDataFileObject =  processor.importJson(data, new GunLayoutTransformer(), type, new GunLayoutDTOServiceImpl(), GunLayoutDTO.class);
 					}
-					else if(data[0].equalsIgnoreCase("HercSimDamage")) {
-						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dbsim."+data[0]);
-						compiledDataFileObject =  processor.importJson(data[1], new HercDamageFileTransformer(), type, new HercSimDmgDTOServiceImpl(), HercDmgDTO.class);
+					else if(classDef.equalsIgnoreCase("HercSimDamage")) {
+						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dbsim."+classDef);
+						compiledDataFileObject =  processor.importJson(data, new HercDamageFileTransformer(), type, new HercSimDmgDTOServiceImpl(), HercDmgDTO.class);
 						
 					}
-					else if(data[0].equalsIgnoreCase("PaperDollGraphic")) {
-						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dbsim."+data[0]);
-						compiledDataFileObject =  processor.importJson(data[1], new PaperDiagramGraphTransformer(), type, new PaperDollDTOServiceImpl(), PaperDollDTO.class);
+					else if(classDef.equalsIgnoreCase("PaperDollGraphic")) {
+						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dbsim."+classDef);
+						compiledDataFileObject =  processor.importJson(data, new PaperDiagramGraphTransformer(), type, new PaperDollDTOServiceImpl(), PaperDollDTO.class);
 					}
-					else if(data[0].equalsIgnoreCase("WeaponPaperDiagram")) {
-						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dbsim."+data[0]);
-						compiledDataFileObject =  processor.importJson(data[1], new WeaponPDGTransformer(), type, new WeapnPDGDTOServiceImpl(), WpnPDGDTO.class);
+					else if(classDef.equalsIgnoreCase("WeaponPaperDiagram")) {
+						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dbsim."+classDef);
+						compiledDataFileObject =  processor.importJson(data, new WeaponPDGTransformer(), type, new WeapnPDGDTOServiceImpl(), WpnPDGDTO.class);
 					}
 					else {
-						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dat.sim."+data[0]);
+						type = (Class<? extends DataFile>) Class.forName("org.hercworks.core.data.file.dat.sim."+classDef);
 						
-						//System.out.println(data[1]); //XXX - developer debug only
+						//System.out.println(data); //XXX - developer debug only
 						
 						if(type == BeamData.class) {
-							compiledDataFileObject =  processor.importJson(data[1], new BeamDatFileTransformer(), type, new BeamDatDTOServiceImpl(), BeamDatDTO.class);
+							compiledDataFileObject =  processor.importJson(data, new BeamDatFileTransformer(), type, new BeamDatDTOServiceImpl(), BeamDatDTO.class);
 						}
 						else if(type == HercSimDat.class) {
-							compiledDataFileObject =  processor.importJson(data[1], new HercSimDataTransformer(), type, new HercSimDataDTOServiceImpl(), HercSimDatDTO.class);
+							compiledDataFileObject =  processor.importJson(data, new HercSimDataTransformer(), type, new HercSimDataDTOServiceImpl(), HercSimDatDTO.class);
 						}
 						else if(type == MissileDatFile.class) {
-							compiledDataFileObject =  processor.importJson(data[1], new MissileDatFileTransformer(), type, new MissileDatDTOServiceImpl(), MissileDatDTO.class);
+							compiledDataFileObject =  processor.importJson(data, new MissileDatFileTransformer(), type, new MissileDatDTOServiceImpl(), MissileDatDTO.class);
 						}
 						else if(type == ProjectileData.class) {
-							compiledDataFileObject =  processor.importJson(data[1], new ProjectileDataTransformer(), type, new ProjectileDatDTOServiceImpl(), ProjectileDataDTO.class);
+							compiledDataFileObject =  processor.importJson(data, new ProjectileDataTransformer(), type, new ProjectileDatDTOServiceImpl(), ProjectileDataDTO.class);
 						}
 //						else if(type == Weapons.class) {
-//							compiledDataFileObject =  processor.importJson(data[1], new Weapons(), type, new HercInfoDTOServiceImpl(), HercInfDTO.class);
+//							compiledDataFileObject =  processor.importJson(data, new Weapons(), type, new HercInfoDTOServiceImpl(), HercInfDTO.class);
 //						}
 					}
 					
@@ -410,30 +416,35 @@ public class ES2CompileMod {
 	}
 	
 	
-	private String[] readMultilineJsonFile(File file) {
-		String[] ret = new String[2];
+	private String readMultilineJsonFile(File file) {
 		
 		StringBuilder parsedString = new StringBuilder();
-		String classDef = null;
 		try(BufferedReader buffer = new BufferedReader(new FileReader(file))){
 			while(buffer.ready()) {
 				String line = buffer.readLine();
 				parsedString.append(line);
-				if(line.contains("classDef")) {
-					int classDefIdx = line.lastIndexOf(keyClassDef) ;
-					ret[0] = line.substring(classDefIdx + keyClassDef.length() , line.lastIndexOf('\"'));
-				}
 			}
 			buffer.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
-			return new String[] {null, null};
+			return null;
 		} catch (IOException e) {
 			e.printStackTrace();
-			return new String[] {null, null};
+			return null;
 		}
-		ret[1] = parsedString.toString().replaceAll("\\s+", "");
-		return ret;
+	    
+		return parsedString.toString().replaceAll("\\s+", "");
 	}
 	
+	private String readClassDefInJson(String json) {
+		
+
+		Pattern pattern = Pattern.compile(classDefRegex, Pattern.CASE_INSENSITIVE);
+	    Matcher matcher = pattern.matcher(json);
+	    if(!matcher.find()) {
+			return null;
+	    }
+	    
+		return matcher.group(0).split("\"")[3];
+	}
 }

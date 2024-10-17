@@ -104,9 +104,6 @@ public final class ES2ModProjectSetup {
 
 	private static ObjectMapper objectMapper;
 	
-	private static boolean endAsDir = true;
-	private static boolean endPathOpen = false;
-	
 	public void setupNewProject(String[] args) {
 		
 		String pathES2Install = null;
@@ -227,32 +224,14 @@ public final class ES2ModProjectSetup {
 			System.err.println(e.getMessage());
 		}
 		
-		new File(generatePath(endAsDir, modRoot.getAbsolutePath(), "export")).mkdir();
+		new File(String.join(File.pathSeparator, modRoot.getAbsolutePath(), "export")).mkdir();
 		
 		System.out.println("Mod setup complete!");
 		System.exit(10);
 	}
 	
-	private static String generatePath(boolean endWithDir, String... segments) {
-		
-		String path = "";
-		
-		for(int i=0; i < segments.length; i++) {
-			path += segments[i];
-			if(i < segments.length - 1) {
-				path += File.separator;
-			}
-			else if(endWithDir){
-				path += File.separator;
-			}
-		}
-		
-		return path;
-	}
-	
 	private static void saveProjectConfig(ES2ModInfo info, String modRootPath){
 		
-		//generatePath(endPathOpen, modRootPath, "info.txt")
 		BufferedWriter writer;
 		try {
 			writer = new BufferedWriter(new FileWriter(new File(String.join(File.separator, modRootPath, "info.txt"))));
@@ -372,8 +351,8 @@ public final class ES2ModProjectSetup {
 					dtoExport = (HercSimDatDTO)(new HercSimDataDTOServiceImpl().convertToDTO(simDat));
 				}
 				
-				else if(data.getFileName().toLowerCase().contains("BULLETS") 
-						|| data.getFileName().toLowerCase().contains("ROCKETS")) {
+				else if(data.getFileName().toLowerCase().contains("bullets") 
+						|| data.getFileName().toLowerCase().contains("rockets")) {
 					transformer = new MissileDatFileTransformer();
 					MissileDatFile missiles = (MissileDatFile)transformer.bytesToObject(data.getRawBytes());
 					missiles.setFileName(data.originNameNoExt());

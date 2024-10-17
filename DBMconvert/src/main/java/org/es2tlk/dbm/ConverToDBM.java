@@ -182,15 +182,11 @@ public class ConverToDBM {
 					int index = findNearestColorIndex(dpl, color);
 					rasterData[cell] = (byte)index;
 					
-//					String clrArr = arrToString(color);
-					
 					int[] dplColor = new int[4];
 					dplColor[0] = dpl.getColors().get(index).getJavaColor().getRed();
 					dplColor[1] =  dpl.getColors().get(index).getJavaColor().getGreen();
 					dplColor[2] = dpl.getColors().get(index).getJavaColor().getBlue();
 					dplColor[3] = dpl.getColors().get(index).getJavaColor().getAlpha();
-					
-//					System.out.println(clrArr + "=" + index +"{" + arrToString(dplColor) + "}");
 					
 					i++;
 				}
@@ -201,18 +197,6 @@ public class ConverToDBM {
 		
 		return null;
 	}
-	
-//	private static String arrToString(int[] arr) {
-//		String ret = "[";
-//		for(int i=0; i < arr.length; i++) {
-//			ret += arr[i];
-//			if(i<arr.length-1) {
-//				ret += ",";
-//			}
-//		}
-//		ret += "]";
-//		return ret;
-//	}
 	
 	private static double calculateDistance(Color c1, Color c2) {
 		int rDiff = c1.getRed() - c2.getRed();
