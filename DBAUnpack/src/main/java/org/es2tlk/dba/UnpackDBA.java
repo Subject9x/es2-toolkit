@@ -148,7 +148,27 @@ public class UnpackDBA {
 			dplLoaded = false;
 		}
 		
-		String dbaName = dbaFilePath.toLowerCase().substring(dbaFilePath.lastIndexOf('/')+1, dbaFilePath.toLowerCase().lastIndexOf("."+FileType.DBA.val()));
+		FileType dbaExt = FileType.DBA;
+		if(dbaFilePath.toLowerCase().contains(FileType.DB0.val())) {
+			dbaExt = FileType.DB0;
+		}
+		else if(dbaFilePath.toLowerCase().contains(FileType.DB1.val())) {
+			dbaExt = FileType.DB1;
+		}
+		else if(dbaFilePath.toLowerCase().contains(FileType.DB2.val())) {
+			dbaExt = FileType.DB2;
+		}
+		else if(dbaFilePath.toLowerCase().contains(FileType.HB0.val())) {
+			dbaExt = FileType.HB0;
+		}
+		else if(dbaFilePath.toLowerCase().contains(FileType.HB1.val())) {
+			dbaExt = FileType.HB1;
+		}
+		else if(dbaFilePath.toLowerCase().contains(FileType.HB2.val())) {
+			dbaExt = FileType.HB2;
+		}
+		
+		String dbaName = dbaFilePath.toLowerCase().substring(dbaFilePath.lastIndexOf('/')+1, dbaFilePath.toLowerCase().lastIndexOf("."+dbaExt.val()));
 		int frameCount = 0;
 
 		System.out.println("---Begin unpack---");

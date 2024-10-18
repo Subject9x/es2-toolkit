@@ -10,7 +10,7 @@
 	<artifactId>DBAUnpack</artifactId>
 	<name>DBAUnpack</name>
 	<description>unpacks Dynamix Bitmap Array files</description>
-	<version>0.0.1</version>
+	<version>0.0.2</version>
 
 	<build>
 		<plugins>
