@@ -5,13 +5,34 @@
 	<parent>
 		<groupId>org.es2tools</groupId>
 		<artifactId>es2kit</artifactId>
-		<version>0.1.0</version>
+		<version>0.2.0</version>
 	</parent>
 	<artifactId>DBAUnpack</artifactId>
 	<name>DBAUnpack</name>
 	<description>unpacks Dynamix Bitmap Array files</description>
-	<version>0.0.2</version>
+	<version>0.0.4</version>
 
+
+	<dependencies>
+		<dependency>
+			<groupId>org.es2tools</groupId>
+			<artifactId>CommonUtil</artifactId>
+			<version>0.0.1</version>
+			<scope>compile</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>org.hercworks</groupId>
+					<artifactId>ES2Core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.hercworks</groupId>
+					<artifactId>ES2TransferApi</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+	</dependencies>
+	
+	
 	<build>
 		<plugins>
 			<!-- clean lifecycle, see

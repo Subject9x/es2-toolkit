@@ -25,10 +25,12 @@ import org.hercworks.core.data.file.dat.shell.RprHerc;
 import org.hercworks.core.data.file.dat.shell.TrainingHercs;
 import org.hercworks.core.data.file.dat.shell.WeaponsDat;
 import org.hercworks.core.data.file.dat.sim.BeamData;
+import org.hercworks.core.data.file.dat.sim.DebrisHerc;
 import org.hercworks.core.data.file.dat.sim.HercSimDat;
 import org.hercworks.core.data.file.dat.sim.MissileDatFile;
 import org.hercworks.core.data.file.dat.sim.ProjectileData;
 import org.hercworks.core.io.transform.dbsim.BeamDatFileTransformer;
+import org.hercworks.core.io.transform.dbsim.DebrisHercTransformer;
 import org.hercworks.core.io.transform.dbsim.FlightModelTransformer;
 import org.hercworks.core.io.transform.dbsim.GunLayoutTransformer;
 import org.hercworks.core.io.transform.dbsim.HercDamageFileTransformer;
@@ -58,6 +60,7 @@ import org.hercworks.transfer.dto.file.shell.StartHercsDTO;
 import org.hercworks.transfer.dto.file.shell.TrainingHercsDTO;
 import org.hercworks.transfer.dto.file.shell.WeaponsDatDTO;
 import org.hercworks.transfer.dto.file.sim.BeamDatDTO;
+import org.hercworks.transfer.dto.file.sim.DebrisHercDTO;
 import org.hercworks.transfer.dto.file.sim.FlightModelDTO;
 import org.hercworks.transfer.dto.file.sim.GunLayoutDTO;
 import org.hercworks.transfer.dto.file.sim.HercDmgDTO;
@@ -67,6 +70,7 @@ import org.hercworks.transfer.dto.file.sim.PaperDollDTO;
 import org.hercworks.transfer.dto.file.sim.ProjectileDataDTO;
 import org.hercworks.transfer.dto.file.sim.WpnPDGDTO;
 import org.hercworks.transfer.svc.impl.dbsim.BeamDatDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.DebrisHercDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.FlightModelDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.GunLayoutDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.HercSimDataDTOServiceImpl;
@@ -377,6 +381,9 @@ public class ES2CompileMod {
 						}
 						else if(type == ProjectileData.class) {
 							compiledDataFileObject =  processor.importJson(data, new ProjectileDataTransformer(), type, new ProjectileDatDTOServiceImpl(), ProjectileDataDTO.class);
+						}
+						else if(type == DebrisHerc.class) {
+							compiledDataFileObject = processor.importJson(data, new DebrisHercTransformer(), type, new DebrisHercDTOServiceImpl(), DebrisHercDTO.class);
 						}
 //						else if(type == Weapons.class) {
 //							compiledDataFileObject =  processor.importJson(data, new Weapons(), type, new HercInfoDTOServiceImpl(), HercInfDTO.class);

@@ -3,11 +3,12 @@
   <parent>
     <artifactId>es2kit</artifactId>
     <groupId>org.es2tools</groupId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>es2palette</artifactId>
   <name>ES2 Paletter</name>
+  <version>0.0.4</version>
   <description>import and export to Dynamix Palette format</description>
   <build>
     <plugins>

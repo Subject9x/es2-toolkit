@@ -8,11 +8,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.imageio.ImageIO;
 
+import org.es2tlk.CmdArgs;
 import org.hercworks.core.data.file.dyn.DynamixBitmap;
 import org.hercworks.core.data.file.dyn.DynamixPalette;
 import org.hercworks.core.io.transform.common.DynamixBitmapTransformer;
@@ -21,32 +21,36 @@ import org.hercworks.voln.FileType;
 
 import at.favre.lib.bytes.Bytes;
 
-public class ConverToDBM {
+public class ConvertToDBM {
 	
-	public static List<String> params = Arrays.asList("-h", "-d", "-p", "-f");
+	private static Color index0AlphaColor = new Color(218, 164, 164);
 	
 	public static void main(String[] args) {
 		
 		String exportDir = null;
 		String dplPath = null;
 		String fileFrag = null;
+		boolean index0Alpha = false;
 		
 		System.out.println("1. Tool will convert .PNG with alpha to .DBM.");
 		System.out.println("2. Required directory must have source .PNG.");
 		System.out.println("3. Directory also destination for output .DBM.");
-		System.out.println("4. -F is file name fragment, will scan for this.");
+		System.out.println("4. -f is file name fragment, will scan for this.");
 		
 		for(int i = 0; i < args.length; i++) {
 			String arg = args[i];
 			
-			if(arg.toLowerCase().equals("-d")) {
+			if(arg.toLowerCase().equals(CmdArgs.Dir.val())) {
 				exportDir = loadArg(args, i+1);
 			}
-			else if(arg.toLowerCase().equals("-p")) {
+			else if(arg.toLowerCase().equals(CmdArgs.Palette.val())) {
 				dplPath = loadArg(args, i+1);
 			}
-			else if(arg.toLowerCase().equals("-f")) {
+			else if(arg.toLowerCase().equals(CmdArgs.File.val())) {
 				fileFrag = loadArg(args, i+1);
+			}
+			else if(arg.toLowerCase().equals(CmdArgs.Alpha.val())) {
+				index0Alpha = true;
 			}
 		}
 		
@@ -126,7 +130,7 @@ public class ConverToDBM {
 		
 		try {
 			for(File f : found) {
-				DynamixBitmap dbm = convertImage(f, dpl);
+				DynamixBitmap dbm = convertImage(f, dpl, index0Alpha);
 				if(dbm != null) {
 					
 					dbm.setImageDataLen(dbm.getImageData().length());
@@ -146,7 +150,7 @@ public class ConverToDBM {
 		}
 	}
 	
-	public static DynamixBitmap convertImage(File imgPath, DynamixPalette dpl) throws IOException {
+	public static DynamixBitmap convertImage(File imgPath, DynamixPalette dpl, boolean isIndex0Alpha) throws IOException {
 		
 		BufferedImage targImage = ImageIO.read(imgPath);
 		
@@ -161,7 +165,6 @@ public class ConverToDBM {
 			
 			String fileName = imgPath.getName().substring(0, imgPath.getName().toLowerCase().lastIndexOf("png")) + FileType.DBM.val();
 			dbm.setFileName(fileName.toUpperCase());
-			
 			
 			byte[] rasterData = new byte[(targImage.getHeight() * targImage.getWidth())];
 			
@@ -179,14 +182,9 @@ public class ConverToDBM {
 					color[2] = color[2] & 0xff;
 					color[3] = color[3] & 0xff;
 					
-					int index = findNearestColorIndex(dpl, color);
-					rasterData[cell] = (byte)index;
+					int index = findNearestColorIndex(dpl, color, isIndex0Alpha);
 					
-					int[] dplColor = new int[4];
-					dplColor[0] = dpl.getColors().get(index).getJavaColor().getRed();
-					dplColor[1] =  dpl.getColors().get(index).getJavaColor().getGreen();
-					dplColor[2] = dpl.getColors().get(index).getJavaColor().getBlue();
-					dplColor[3] = dpl.getColors().get(index).getJavaColor().getAlpha();
+					rasterData[cell] = (byte)index;
 					
 					i++;
 				}
@@ -205,9 +203,20 @@ public class ConverToDBM {
 		return Math.sqrt((rDiff * rDiff) + (gDiff * gDiff) + (bDiff * bDiff));
 	}
 
-	private static int findNearestColorIndex(DynamixPalette dpl, int[] color) {
+	private static int findNearestColorIndex(DynamixPalette dpl, int[] color, boolean isIndex0Alpha) {
 
-		Color checkColor = new Color(color[0], color[1], color[2], color[3]);
+		Color checkColor = new Color(color[0], color[1], color[2]);
+		System.out.println("checkColor=" + checkColor.getRGB() + "\n");
+		System.out.println("index0AlphaColor=" + index0AlphaColor.getRGB() +"\n");
+		if(isIndex0Alpha) {
+			//why this way? png could or could not have an alpha channel (it gets crushed regardless)
+			//but awt color getRGB() is thrown off if getAlpha values mismatch.
+			if(checkColor.getRed() == index0AlphaColor.getRed()
+					&& checkColor.getBlue() == index0AlphaColor.getBlue()
+					&& checkColor.getGreen() == index0AlphaColor.getGreen()) {
+				return 0;	
+			}
+		}
 
 		int index = 0;
 
