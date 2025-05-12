@@ -1,0 +1,36 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.es2tools</groupId>
+    <artifactId>es2kit</artifactId>
+    <version>0.2.0</version>
+  </parent>
+  <artifactId>DTSExtract</artifactId>
+  <name>DTS Extractor</name>
+  <description>extracts vertex, uv map data from DTS to obj</description>
+  
+  <dependencies>
+  	<dependency>
+			<groupId>org.es2tools</groupId>
+			<artifactId>CommonUtil</artifactId>
+			<version>0.0.1</version>
+			<scope>compile</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>org.hercworks</groupId>
+					<artifactId>ES2Core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.hercworks</groupId>
+					<artifactId>ES2TransferApi</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.erenyenigul</groupId>
+			<artifactId>Wavefront.Java</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+  </dependencies>
+</project>

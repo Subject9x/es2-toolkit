@@ -1,0 +1,9 @@
+//Dynamix ThreeSpace Model extractor
+//ThreeSpace 2.0 / Earthsiege 2 version.
+//
+// please end paths with ending slash /
+dts_dir=<dir path to dts files>
+dba_file=<directory path to export to>
+palette=<file path and name to DPL>
+export_dir=<dir path to export to>
+//index0Alpha=<true|false> - default to true

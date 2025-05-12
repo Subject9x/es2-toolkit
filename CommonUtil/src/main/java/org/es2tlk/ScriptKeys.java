@@ -7,6 +7,8 @@ public enum ScriptKeys {
 	DBMDir("dbm_dir"),
 	DBADir("dba_dir"),
 	DBADirExport("dba_out"),
+	DTSDir("dts_dir"),
+	ExportDir("export_dir"),
 	Palette("palette"),
 	PNGDir("png_dir"),
 	Indx0Alpha("index0alpha"),

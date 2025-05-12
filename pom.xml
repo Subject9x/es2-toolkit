@@ -28,6 +28,7 @@
 		<module>CompileDBA</module>
 		<module>DBAUnpack</module>
 		<module>ES2ModCompiler</module>
+		<module>DTSExtract</module>
 	</modules>
 	<dependencies>
 
