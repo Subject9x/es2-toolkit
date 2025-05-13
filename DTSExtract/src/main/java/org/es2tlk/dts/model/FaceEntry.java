@@ -1,38 +1,38 @@
 package org.es2tlk.dts.model;
 
-import org.erenyenigul.obj.elements.Point;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 public class FaceEntry {
 
 	private String mtlName;
-	private Point[] pointIndex;
+	private Vector3D[] pointIndex;
 	private int[] textureVerts;
-	private Point normal;
+	private Vector3D normal;
 
 	public FaceEntry() {}
 	
-	public FaceEntry(Point ...points) {
+	public FaceEntry(Vector3D ...points) {
 		this.pointIndex = points;
 	}
 	
-	public FaceEntry(Point normal, Point ...points) {
+	public FaceEntry(Vector3D normal, Vector3D ...points) {
 		this.pointIndex = points;
 		this.normal = normal;
 	}
 	
-	public Point[] getPointIndex() {
+	public Vector3D[] getPointIndex() {
 		return pointIndex;
 	}
 
-	public void setPointIndex(Point[] pointIndex) {
+	public void setPointIndex(Vector3D[] pointIndex) {
 		this.pointIndex = pointIndex;
 	}
 
-	public Point getNormal() {
+	public Vector3D getNormal() {
 		return normal;
 	}
 
-	public void setNormals(Point normal) {
+	public void setNormals(Vector3D normal) {
 		this.normal = normal;
 	}
 

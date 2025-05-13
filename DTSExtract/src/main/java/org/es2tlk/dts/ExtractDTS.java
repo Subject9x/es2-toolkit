@@ -6,11 +6,10 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Set;
+import java.util.List;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
-import org.erenyenigul.obj.elements.Point;
 import org.es2tlk.ScriptKeys;
 import org.es2tlk.dts.model.FaceEntry;
 import org.es2tlk.dts.model.Material;
@@ -105,16 +104,9 @@ public class ExtractDTS {
 		//DEBUG---------------------------------------------------------------------------------------
 		dtsDirPath = "e:/es2_os/dev/earthsiege2/unpack/simvol0/dts/";
 		dplFilePath = "e:/es2_os/dev/earthsiege2/unpack/simvol0/dpl/world0.dpl";
-		dbafilePath = "e:/es2_os/dev/earthsiege2/unpack/simvol0/dba/enemy.dba";
-		exportDirPath = "e:/es2_os/dev/earthsiege2/unpack/dts/cyb/";
-		fileNames.add("ACHILLES.DTS");
-		fileNames.add("CERBERUS.DTS");
-		fileNames.add("DIABLO.DTS");
-		fileNames.add("HEADHUNT.DTS");
-		fileNames.add("HYPERION.DTS");
-		fileNames.add("MIRIMAC.DTS");
-		fileNames.add("SCARAB.DTS");
-		fileNames.add("SPIDER.DTS");
+		dbafilePath = "e:/es2_os/dev/earthsiege2/unpack/simvol0/dba/heavy.dba";
+		exportDirPath = "e:/es2_os/dev/earthsiege2/unpack/dts/cols/";
+		fileNames.add("COLOSSUS.DTS");
 		//=============================================================================================
 		
 		
@@ -245,14 +237,21 @@ public class ExtractDTS {
 				return;
 			}
 			
-			Set<MaterialObj> meshes = DTStoObj.convertDTS_to_OBJ(dts, texture);
+			DTStoObj toObj = new DTStoObj();
+			List<MaterialObj> meshes = toObj.convertDTS_to_OBJ(dts, texture);
 			if(meshes.isEmpty()) {
 				return;
 			}
-			for(MaterialObj obj : meshes) {
-				writeObjFile(fileName, expDir, obj);
-			}
 			
+			//debug
+				System.out.println(dts.getMeshes().get(0).toString());
+
+			
+//			for(MaterialObj obj : meshes) {
+//				writeObjFile(fileName, expDir, obj);
+//			}
+			writeObjFile(fileName, expDir, meshes.get(0));
+				
 			
 		} catch (FileNotFoundException e) {
 			System.err.println(e.getMessage());
@@ -278,116 +277,112 @@ public class ExtractDTS {
 		dat.append("o ").append(mesh.getFileName()).append("\n");
 		
 		
-		for(Point p : mesh.getVertices()) {
+		for(Vector3D p : mesh.getVertices()) {
 			dat.append("v "+p.getX() + " " + p.getY() +" " + p.getZ() + "\n");
 		}
-		
-//		FIXME - normals		
-		for(Point norm : mesh.getNormals()) {
-			dat.append("vn "+norm.getX() + " " + norm.getY() +" " + norm.getZ() + "\n");
-		}
-		
+		dat.append("# vertices ").append(mesh.getVertices().size()).append("\n\n");
+
 		for(int t=0; t < mesh.getTextureVerts().size(); t++) {
 			Vector2D vtex  = mesh.getTextureVerts().get(t);
 			dat.append("vt "+vtex.getX() + " " + vtex.getY() +"\n");
 		}
-
-		for(ObjGroup grp : mesh.getGroups()) {
+		dat.append("# vtextures ").append(mesh.getTextureVerts().size()).append("\n\n");
 			
-			dat.append("g ").append(grp.getName()).append("\n");
+		for(Vector3D norm : mesh.getNormals()) {
+			dat.append("vn "+norm.getX() + " " + norm.getY() +" " + norm.getZ() + "\n");
+		}
+		dat.append("# normals ").append(mesh.getNormals().size()).append("\n\n");
+		
+
+		
+		/*
+		 * Write faces by group G tag
+		 * AND write faces organized by specific material!
+		 */
+		for(ObjGroup grp : mesh.getGroups()) {
+			dat.append("\ng ").append(grp.getName()).append("\n");
+			String mtlName = null;
+			//write non-textured polygons
 			for(FaceEntry face : grp.getFaces()) {
-				if(face.getMtlName() != null && !face.getMtlName().isEmpty()) {
-					dat.append("usemtl ").append(face.getMtlName()).append("\n");
+				if(face.getMtlName() == null) {
+					dat.append(writeFaceEntry(face, mesh));
 				}
-				dat.append("f ");
-				for(int p=0; p < face.getPointIndex().length; p++) {
-					dat.append(mesh.getVertices().indexOf(face.getPointIndex()[p]) + 1);
-					if(face.getMtlName() != null) {
-						if(face.getPointIndex().length == 4) {
-							dat.append("/").append(face.getTextureVerts()[p]);
+			}
+			
+			for(Material mtl : mesh.getMaterials().values()) {
+				for(FaceEntry face : grp.getFaces()) {			
+					if(mesh.getMaterialBinding().get(face) == mtl) {
+						if(mtlName == null) {
+							//check for new material heading or not
+							dat.append("usemtl ").append(mtl.getName()).append("\n");
+							mtlName = mtl.getName();
 						}
-						else {
-							if(p < 3) {
-								dat.append("/").append(face.getTextureVerts()[p]);	
-							}
-							
-						}
+						dat.append(writeFaceEntry(face, mesh));
 					}
-					dat.append("/").append(mesh.getNormals().indexOf(face.getNormal())+1);
-					dat.append(" ");
 				}
-				dat.append("\n");
-			}	
+				//reset at end of group
+				mtlName = null;
+			}
+		}
+			
+		File objFile = new File(expDir.getAbsolutePath() + File.separator + mesh.getFileName() + ".obj");	
+		try(FileWriter fileWriter = new FileWriter(objFile)) {
+			fileWriter.write(dat.toString());
+			fileWriter.close();
+		} catch (IOException e) {
+		    // Cxception handling
 		}
 		
-		
-//		HashMap<Point,Integer> renderedVerticesMap = new HashMap<>();
-//		StringBuilder renderedVertices = new StringBuilder();
-//		StringBuilder renderedFaces = new StringBuilder();
-//
-//		for(Face face : mesh.getFaces()) {
-//			LinkedList<Integer> verticesOfFace = new LinkedList<Integer>();
-//			
-//			for(Point p : face.getPoints()) {
-//				if(renderedVerticesMap.containsKey(p)) {
-//					verticesOfFace.add(renderedVerticesMap.get(p));
-//				
-//				}else {
-//					int index = renderedVerticesMap.size()+1;
-//					renderedVerticesMap.put(p, index);
-//					renderedVertices.append("v "+p.getX() + " " + p.getY() +" " + p.getZ() + "\n");
-//					
-//					verticesOfFace.add(index);
-//				}
-//			}
-//			
-//			renderedFaces.append("f ");
-//			for(int v : verticesOfFace) {
-//				renderedFaces.append(v+" ");
-//			}
-//			renderedFaces.append("\n");
+		if(!mesh.getMaterials().isEmpty()) {
+			StringBuilder strMtl = new StringBuilder();
 			
-			
-			File objFile = new File(expDir.getAbsolutePath() + File.separator + mesh.getFileName() + ".obj");	
-			try(FileWriter fileWriter = new FileWriter(objFile)) {
-				fileWriter.write(dat.toString());
+			for(String id : mesh.getMaterials().keySet()){
+				Material mtl = mesh.getMaterials().get(id);
+				for(Keys key : mtl.getAttributes().keySet()) {
+					strMtl.append(key.val()).append(" ");
+					
+					Object attr = mtl.getAttribute(key);
+					if(attr instanceof Vector3D) {
+						Vector3D val = (Vector3D)attr;
+						strMtl.append(val.getX()).append(" ");
+						strMtl.append(val.getY()).append(" ");
+						strMtl.append(val.getZ());
+						
+					}
+					else {
+						strMtl.append(attr.toString());
+					}
+					strMtl.append("\n");
+				}
+				strMtl.append("\n");
+			}
+			File mtlFile = new File(expDir.getAbsolutePath() + File.separator + mesh.getFileName() + ".mtl");	
+			try(FileWriter fileWriter = new FileWriter(mtlFile)) {
+				fileWriter.write(strMtl.toString());
 				fileWriter.close();
 			} catch (IOException e) {
 			    // Cxception handling
 			}
-			
-			if(!mesh.getMaterials().isEmpty()) {
-				StringBuilder strMtl = new StringBuilder();
-				
-				for(String id : mesh.getMaterials().keySet()){
-					Material mtl = mesh.getMaterials().get(id);
-					for(Keys key : mtl.getAttributes().keySet()) {
-						strMtl.append(key.val()).append(" ");
-						
-						Object attr = mtl.getAttribute(key);
-						if(attr instanceof Vector3D) {
-							Vector3D val = (Vector3D)attr;
-							strMtl.append(val.getX()).append(" ");
-							strMtl.append(val.getY()).append(" ");
-							strMtl.append(val.getZ());
-							
-						}
-						else {
-							strMtl.append(attr.toString());
-						}
-						strMtl.append("\n");
-					}
-					strMtl.append("\n");
-				}
-				File mtlFile = new File(expDir.getAbsolutePath() + File.separator + mesh.getFileName() + ".mtl");	
-				try(FileWriter fileWriter = new FileWriter(mtlFile)) {
-					fileWriter.write(strMtl.toString());
-					fileWriter.close();
-				} catch (IOException e) {
-				    // Cxception handling
-				}
+		}
+	}
+	private static String writeFaceEntry(FaceEntry face, MaterialObj mesh) {
+		StringBuilder str = new StringBuilder();
+
+		str.append("f ");
+		for(int p=0; p < face.getPointIndex().length; p++) {
+			str.append(mesh.getVertices().indexOf(face.getPointIndex()[p]) + 1);
+			if(face.getMtlName() != null) {
+				str.append("/").append(face.getTextureVerts()[p]);
 			}
-//		}
+			else {
+				str.append("/");	
+			}
+			str.append("/").append(mesh.getNormals().indexOf(face.getNormal()) + 1);
+			str.append(" ");
+		}
+		str.append("\n");
+		
+		return str.toString();
 	}
 }
 

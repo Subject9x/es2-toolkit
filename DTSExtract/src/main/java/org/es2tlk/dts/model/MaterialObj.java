@@ -5,9 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.erenyenigul.obj.elements.Face;
-import org.erenyenigul.obj.elements.Point;
 
 /**
  * Attempt at an OBJ model object as defined by the Wavefront.java library....
@@ -20,66 +20,64 @@ public class MaterialObj {
 	private String fileName;
 	
 	int vidx = 0;
-	private List<Point> vertices;
+	private List<Vector3D> vertices = new ArrayList<Vector3D>();
 	
 	int nidx = 0;
-	private List<Point> normals;
+	private List<Vector3D> normals = new ArrayList<Vector3D>();
 	
 	int texidx = 0;
-	private List<Vector2D> textureVerts;
+	private List<Vector2D> textureVerts = new ArrayList<Vector2D>();
 	
-	private List<ObjGroup> groups;
+	private List<ObjGroup> groups = new ArrayList<ObjGroup>();
 	
-	private Map<String, Material> materials;
+	private Map<String, Material> materials = new HashMap<String, Material>();
 	
-	private Map<Face, Material> materialBinding;
+	private Map<FaceEntry, Material> materialBinding = new HashMap<FaceEntry, Material>();
 	
 	public MaterialObj() {}
 	
 	public MaterialObj(String meshName) {
 		this.fileName = meshName;
-		this.vertices = new ArrayList<Point>();
-		
-		this.normals = new ArrayList<Point>();
-		
-		this.textureVerts = new ArrayList<Vector2D>();
-		this.groups = new ArrayList<ObjGroup>();
-		this.materials = new HashMap<String, Material>();
-		materialBinding = new HashMap<Face, Material>();
 	}
 
 	
-	public int addPoint(Point p) {
-		vertices.add(p);
+	public int addPoint(Vector3D p) {
+		getVertices().add(p);
 		vidx+=1;
 		return vidx; 
 	}
 	
-	public int addNormal(Point n) {
-		normals.add(n);
+	public int addNormal(Vector3D n) {
+		getNormals().add(n);
 		nidx += 1;
 		return nidx;
 	}
 	
 	public int addTextureCoord(Vector2D vt) {
-		textureVerts.add(vt);
+		getTextureVerts().add(vt);
 		texidx += 1;
 		return texidx;
 	}
 	
-	public void addGroup(ObjGroup grp) {
-		this.groups.add(grp);
+	public void addGroup(ObjGroup grp, int idx) {
+		getGroups().add(idx, grp);
+		for(FaceEntry f : grp.getFaces()) {
+			if(f.getMtlName() != null && !f.getMtlName().isEmpty()) {
+				this.materialBinding.put(f, getMaterials().get(f.getMtlName()));
+			}
+		}
 	}
 	
-	public List<Point> getVertices(){
+	
+	public List<Vector3D> getVertices(){
 		return vertices;
 	}
 
-	public List<Point> getNormals() {
+	public List<Vector3D> getNormals() {
 		return normals;
 	}
 
-	public void setNormals(List<Point> normals) {
+	public void setNormals(List<Vector3D> normals) {
 		this.normals = normals;
 	}
 	
@@ -111,11 +109,11 @@ public class MaterialObj {
 		this.materials = materials;
 	}
 
-	public Map<Face, Material> getMaterialBinding() {
+	public Map<FaceEntry, Material> getMaterialBinding() {
 		return materialBinding;
 	}
 
-	public void setMaterialBinding(Map<Face, Material> materialBinding) {
+	public void setMaterialBinding(Map<FaceEntry, Material> materialBinding) {
 		this.materialBinding = materialBinding;
 	}
 
