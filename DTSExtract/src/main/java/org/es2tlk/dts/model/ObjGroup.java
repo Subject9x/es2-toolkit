@@ -15,7 +15,6 @@ public class ObjGroup {
 	
 	public ObjGroup(String name) {
 		this.name = name;
-
 		this.faces = new ArrayList<FaceEntry>();
 	}
 	
@@ -31,5 +30,15 @@ public class ObjGroup {
 		return this.faces;
 	}
 
+	@Override
+	public String toString(){
+		StringBuilder str = new StringBuilder();
+		
+		
+		str.append(getName()).append("\n");
+		str.append("face size=").append(getFaces().size());
+		
+		return str.toString();
+	}
 	
 }

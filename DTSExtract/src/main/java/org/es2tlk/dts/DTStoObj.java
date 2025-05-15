@@ -1,5 +1,7 @@
 package org.es2tlk.dts;
 
+import java.awt.Color;
+import java.awt.color.ColorSpace;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,8 +16,7 @@ import org.es2tlk.dts.model.ObjGroup;
 import org.hercworks.core.data.file.dts.TSGroup;
 import org.hercworks.core.data.file.dts.TSObject;
 import org.hercworks.core.data.file.dts.TSPoly;
-import org.hercworks.core.data.file.dts.TSRootObject;
-import org.hercworks.core.data.file.dts.TSShapeColor;
+import org.hercworks.core.data.file.dts.TSSurfaceEntry;
 import org.hercworks.core.data.file.dts.bsp.TSBSPPart;
 import org.hercworks.core.data.file.dts.part.TSCellAnimPart;
 import org.hercworks.core.data.file.dts.part.TSPartList;
@@ -121,7 +122,7 @@ public final class DTStoObj {
 //				double[] ctr = tsg.getPoints()[poly.getCenter()].toDouble();
 //				originOffset = originOffset.add(new Vector3D(ctr[0] * -1, ctr[2] , ctr[1]));
 				
-				vertex = vertex.add(originOffset);
+//				vertex = vertex.add(originOffset);
 				
 				
 				trgMesh.addPoint(vertex);
@@ -159,7 +160,9 @@ public final class DTStoObj {
 		Material m = null;
 		String mtlName = null;
 		if(poly instanceof TSTexture4Poly) {
-			int color = tsg.getColors()[((TSTexture4Poly)poly).getColorIndexId()].getRgba()[0];
+			
+			int color = tsg.getSurfaces()[((TSTexture4Poly)poly).getColorIndexId() / 4].getSurfaceColor();
+			
 			mtlName = dba.originNameNoExt() + "_" + color;
 			m = obj.getMaterials().get(mtlName);
 			if(m == null) {
@@ -169,12 +172,8 @@ public final class DTStoObj {
 		}
 		else if(poly instanceof TSShadedPoly) {
 			TSShadedPoly shadePoly = (TSShadedPoly)poly;
-			TSShapeColor data = tsg.getColors()[shadePoly.getColorIndexId()];
 			
-			double[] color = new double[] {(double)data.getRgba()[0]/10, 
-					(double)data.getRgba()[1]/10,
-					(double)data.getRgba()[2]/10,
-					(double)data.getRgba()[3]/10};
+			int color = tsg.getSurfaces()[shadePoly.getColorIndexId() / 4].getSurfaceColor();
 			
 			mtlName = "shaded_" + color;
 			m = obj.getMaterials().get(mtlName);
@@ -186,12 +185,9 @@ public final class DTStoObj {
 		}
 		else if(poly instanceof TSSolidPoly) {
 			TSSolidPoly solid = (TSSolidPoly)poly;
-			TSShapeColor data = tsg.getColors()[solid.getColorIndexId()];
 			
-			double[] color = new double[] {(double)data.getRgba()[0]/10, 
-					(double)data.getRgba()[1]/10,
-					(double)data.getRgba()[2]/10,
-					(double)data.getRgba()[3]/10};
+			int color = tsg.getSurfaces()[solid.getColorIndexId() / 4].getSurfaceColor();
+			
 			mtlName = "solid_" + color;
 			m = obj.getMaterials().get(mtlName);
 			if(m == null) {
@@ -217,13 +213,15 @@ public final class DTStoObj {
 		return mtl;
 	}
 	
-	private Material addNewSolidMaterial(String mtlName, MaterialObj obj, double[] color) {
+	private Material addNewSolidMaterial(String mtlName, MaterialObj obj, int color) {
 
 		Material mtl = new Material(mtlName);
 		LinkedHashMap<Keys, Object> attr = new LinkedHashMap<Material.Keys, Object>();
 		
 		attr.put(Keys.KEY_NEWMTL, mtlName);
-		attr.put(Material.Keys.KEY_DIFFUSE, new Vector3D(color[0], color[1], color[2]));
+		
+//		attr.put(Material.Keys.KEY_DIFFUSE, new Vector3D(color[0], color[1], color[2]));
+		
 		attr.put(Material.Keys.KEY_D_TRANS, Double.valueOf(1.0));
 		
 		mtl.setAttributes(attr);
@@ -233,14 +231,18 @@ public final class DTStoObj {
 		
 	}
 	
-	private Material addNewShadeMaterial(String mtlName, MaterialObj obj, double[] shades) {
+	private Material addNewShadeMaterial(String mtlName, MaterialObj obj, int color) {
 
 		
 		Material mtl = new Material(mtlName);
 		LinkedHashMap<Keys, Object> attr = new LinkedHashMap<Material.Keys, Object>();
 		
 		attr.put(Keys.KEY_NEWMTL, mtlName);
-		attr.put(Material.Keys.KEY_DIFFUSE, new Vector3D(shades[0], shades[1], shades[2]));
+		
+		Color c = valueOf(color);
+		Color c2 = new Color(color, false);
+		
+//		attr.put(Material.Keys.KEY_DIFFUSE, new Vector3D(shades[0], shades[1], shades[2]));
 		attr.put(Material.Keys.KEY_D_TRANS, Double.valueOf(1.0));
 		
 		mtl.setAttributes(attr);
@@ -294,6 +296,13 @@ public final class DTStoObj {
 			}
 			return v1;
 		}
-		
+	}
+	
+	public static Color valueOf(int color) {
+	    float r = ((color >> 16) & 0xff) / 127;
+	    float g = ((color >>  8) & 0xff) / 127;
+	    float b = ((color      ) & 0xff) / 127;
+//	    float a = ((color >> 24) & 0xff);
+	    return new Color(r, g ,b);
 	}
 }
