@@ -1,12 +1,15 @@
 package org.es2tlk.dts;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
@@ -16,6 +19,7 @@ import org.es2tlk.dts.model.Material;
 import org.es2tlk.dts.model.Material.Keys;
 import org.es2tlk.dts.model.MaterialObj;
 import org.es2tlk.dts.model.ObjGroup;
+import org.hercworks.core.data.file.dts.TSObject;
 import org.hercworks.core.data.file.dyn.DynamixBitmapArray;
 import org.hercworks.core.data.file.dyn.DynamixPalette;
 import org.hercworks.core.data.file.dyn.DynamixThreeSpaceModel;
@@ -33,83 +37,77 @@ public class ExtractDTS {
 		System.out.println("1. fill out a copy of dts_out.txt");
 		System.out.println("2. enter path and file of unpack.txt to here");
 		System.out.print("unpack file= ");
-//		BufferedReader consoleRead = new BufferedReader(new InputStreamReader(System.in));
-//		
-//		String unpackPath = null;
-//		
-//		try {
-//			unpackPath = consoleRead.readLine();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//			System.out.print(e.getMessage());
-//		}
-//		
-//		System.out.println("you entered=[" + unpackPath + "]");
-//		
-//		if(!unpackPath.contains(".txt")) {
-//			System.out.println("--->Error! missing filename or txt extension of name.");
-//			System.exit(1);
-//		}
-//		
-//		File unpackFile = new File(unpackPath);
-//		
-//		if(!unpackFile.exists()) {
-//			System.out.println("--->Error! directory doesn't exist.");
-//			System.exit(1);
-//		}
+		BufferedReader consoleRead = new BufferedReader(new InputStreamReader(System.in));
+		
+		String unpackPath = null;
+		
+		try {
+			unpackPath = consoleRead.readLine();
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.out.print(e.getMessage());
+		}
+		
+		System.out.println("you entered=[" + unpackPath + "]");
+		
+		if(!unpackPath.contains(".txt")) {
+			System.out.println("--->Error! missing filename or txt extension of name.");
+			System.exit(1);
+		}
+		
+		File unpackFile = new File(unpackPath);
+		
+		if(!unpackFile.exists()) {
+			System.out.println("--->Error! directory doesn't exist.");
+			System.exit(1);
+		}
 		
 		String dtsDirPath = null;
 		String dplFilePath = null;
 		String dbafilePath = null;
 		String exportDirPath = null;
+		double scalar = 0.1;
+		
 		boolean index0Alpha = true;	//default to true because DTS need it.
 		ArrayList<String> fileNames = new ArrayList<String>();
 		
-		//commented out for debug
-//		try {
-//			Scanner scanner = new Scanner(unpackFile);
-//
-//			while (scanner.hasNextLine()) {
-//				String line = scanner.nextLine();
-//				if(line.contains("//")) {
-//					continue;
-//				}
-//				if(line.length() == 0) {
-//					continue;
-//				}
-//				if(line.contains(ScriptKeys.DTSDir.val())) {
-//					dtsDirPath = line.substring(line.lastIndexOf('=')+1);	
-//				}
-//				else if(line.contains(ScriptKeys.Palette.val())) {
-//					dplFilePath = line.substring(line.lastIndexOf('=')+1);
-//				}
-//				else if(line.contains(ScriptKeys.DBAFILE.val())) {
-//					dbafilePath = line.substring(line.lastIndexOf('=')+1);
-//				}
-//				else if(line.contains(ScriptKeys.ExportDir.val())) {
-//					exportDirPath = line.substring(line.lastIndexOf('=')+1);
-//				}
-//				else {
-//					fileNames.add(line);
-//				}
-//				
-//			}
-//			scanner.close();
-//		} catch (FileNotFoundException e) {
-//			e.printStackTrace();
-//			System.out.print(e.getMessage());
-//			System.exit(1);
-//		}	
-		
-		//DEBUG---------------------------------------------------------------------------------------
-		dtsDirPath = "e:/es2_os/dev/earthsiege2/unpack/simvol0/dts/";
-		dplFilePath = "e:/es2_os/dev/earthsiege2/unpack/simvol0/dpl/world0.dpl";
-		dbafilePath = "e:/es2_os/dev/earthsiege2/unpack/simvol0/dba/heavy.dba";
-		exportDirPath = "e:/es2_os/dev/earthsiege2/unpack/dts/cols/";
-		fileNames.add("COLOSSUS.DTS");
-		//=============================================================================================
-		
-		
+		try {
+			Scanner scanner = new Scanner(unpackFile);
+
+			while (scanner.hasNextLine()) {
+				String line = scanner.nextLine();
+				if(line.contains("//")) {
+					continue;
+				}
+				if(line.length() == 0) {
+					continue;
+				}
+				if(line.contains(ScriptKeys.DTSDir.val())) {
+					dtsDirPath = line.substring(line.lastIndexOf('=')+1);	
+				}
+				else if(line.contains(ScriptKeys.Palette.val())) {
+					dplFilePath = line.substring(line.lastIndexOf('=')+1);
+				}
+				else if(line.contains(ScriptKeys.DBAFILE.val())) {
+					dbafilePath = line.substring(line.lastIndexOf('=')+1);
+				}
+				else if(line.contains(ScriptKeys.ExportDir.val())) {
+					exportDirPath = line.substring(line.lastIndexOf('=')+1);
+				}
+				else if(line.contains("scalar")) {
+					scalar = Double.valueOf(line.substring(line.lastIndexOf('=')+1));
+				}
+				else {
+					fileNames.add(line);
+				}
+				
+			}
+			scanner.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			System.out.print(e.getMessage());
+			System.exit(1);
+		}	
 		
 		System.out.println(ScriptKeys.DBMDir.val() + "=" + dtsDirPath);
 		if(dplFilePath != null && !dplFilePath.equals("")) {
@@ -215,12 +213,12 @@ public class ExtractDTS {
 		}
 
 		for(String dtsFileName : fileNames) {
-			processDTSFile(dtsFileName, exportDir, dtsInputDir, dba);
+			processDTSFile(dtsFileName, exportDir, dtsInputDir, dba, scalar);
 		}
 		
 	}
 	
-	private static void processDTSFile(String fileName, File expDir, File srcDir, DynamixBitmapArray texture) {
+	private static void processDTSFile(String fileName, File expDir, File srcDir, DynamixBitmapArray texture, double scalar) {
 		
 		dtsTransformer.resetIndex();
 		
@@ -238,20 +236,15 @@ public class ExtractDTS {
 			}
 			
 			DTStoObj toObj = new DTStoObj();
-			List<MaterialObj> meshes = toObj.convertDTS_to_OBJ(dts, texture);
+			List<MaterialObj> meshes = toObj.convertDTS_to_OBJ(dts, texture, scalar);
 			if(meshes.isEmpty()) {
 				return;
 			}
 			
-			//debug
-				System.out.println(dts.getMeshes().get(0).toString());
-
-			
-//			for(MaterialObj obj : meshes) {
-//				writeObjFile(fileName, expDir, obj);
-//			}
-			writeObjFile(fileName, expDir, meshes.get(0));
-				
+			for(MaterialObj obj : meshes) {
+				writeObjFile(fileName, expDir, obj);
+				writeRawJson(dts.getMeshes().iterator().next(), expDir, obj.getFileName());
+			}	
 			
 		} catch (FileNotFoundException e) {
 			System.err.println(e.getMessage());
@@ -293,8 +286,6 @@ public class ExtractDTS {
 		}
 		dat.append("# normals ").append(mesh.getNormals().size()).append("\n\n");
 		
-
-		
 		/*
 		 * Write faces by group G tag
 		 * AND write faces organized by specific material!
@@ -330,41 +321,56 @@ public class ExtractDTS {
 			fileWriter.write(dat.toString());
 			fileWriter.close();
 		} catch (IOException e) {
-		    // Cxception handling
+			System.err.println(e.getLocalizedMessage());
 		}
 		
 		if(!mesh.getMaterials().isEmpty()) {
-			StringBuilder strMtl = new StringBuilder();
-			
-			for(String id : mesh.getMaterials().keySet()){
-				Material mtl = mesh.getMaterials().get(id);
-				for(Keys key : mtl.getAttributes().keySet()) {
-					strMtl.append(key.val()).append(" ");
-					
-					Object attr = mtl.getAttribute(key);
-					if(attr instanceof Vector3D) {
-						Vector3D val = (Vector3D)attr;
-						strMtl.append(val.getX()).append(" ");
-						strMtl.append(val.getY()).append(" ");
-						strMtl.append(val.getZ());
-						
-					}
-					else {
-						strMtl.append(attr.toString());
-					}
-					strMtl.append("\n");
+			writeMaterialFile(mesh, expDir);
+		}
+	}
+	
+	private static void writeMaterialFile(MaterialObj mesh, File exportDir) {
+		StringBuilder strMtl = new StringBuilder();
+		
+		for(String id : mesh.getMaterials().keySet()){
+			Material mtl = mesh.getMaterials().get(id);
+			for(Keys key : mtl.getAttributes().keySet()) {
+				strMtl.append(key.val()).append(" ");
+				
+				Object attr = mtl.getAttribute(key);
+				if(attr instanceof Vector3D) {
+					Vector3D val = (Vector3D)attr;
+					strMtl.append(val.getX()).append(" ");
+					strMtl.append(val.getY()).append(" ");
+					strMtl.append(val.getZ());
+				}
+				else {
+					strMtl.append(attr.toString());
 				}
 				strMtl.append("\n");
 			}
-			File mtlFile = new File(expDir.getAbsolutePath() + File.separator + mesh.getFileName() + ".mtl");	
-			try(FileWriter fileWriter = new FileWriter(mtlFile)) {
-				fileWriter.write(strMtl.toString());
-				fileWriter.close();
-			} catch (IOException e) {
-			    // Cxception handling
-			}
+			strMtl.append("\n");
+		}
+		File mtlFile = new File(exportDir.getAbsolutePath() + File.separator + mesh.getFileName() + ".mtl");	
+		try(FileWriter fileWriter = new FileWriter(mtlFile)) {
+			fileWriter.write(strMtl.toString());
+			fileWriter.close();
+		} catch (IOException e) {
+		    System.err.println(e.getLocalizedMessage());
 		}
 	}
+	
+	private static void writeRawJson(TSObject dts, File exportDir, String fileName) {
+		
+		File jsonFile = new File(exportDir.getAbsolutePath() + File.separator + fileName + ".json");	
+		try(FileWriter fileWriter = new FileWriter(jsonFile)) {
+			fileWriter.write(dts.toString());
+			fileWriter.close();
+		} catch (IOException e) {
+		    System.err.println(e.getLocalizedMessage());
+		}
+	}
+	
 	private static String writeFaceEntry(FaceEntry face, MaterialObj mesh) {
 		StringBuilder str = new StringBuilder();
 

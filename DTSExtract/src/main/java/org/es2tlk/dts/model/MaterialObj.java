@@ -42,15 +42,45 @@ public class MaterialObj {
 
 	
 	public int addPoint(Vector3D p) {
-		getVertices().add(p);
-		vidx+=1;
-		return vidx; 
+		boolean isNew = true;
+		int index = 0;
+		for(Vector3D v : getVertices()) {
+			if(v.getX() == p.getX() &&
+					v.getY() == p.getY() &&
+					v.getZ() == p.getZ()) {
+				
+				isNew = false;
+				index = getVertices().indexOf(v);
+			}
+		}
+		if(isNew) {
+			getVertices().add(p);
+			vidx+=1;
+			index = vidx;
+		}
+		return index; 
 	}
 	
 	public int addNormal(Vector3D n) {
-		getNormals().add(n);
-		nidx += 1;
-		return nidx;
+		
+		boolean isNew = true;
+		int index = 0;
+		for(Vector3D v : getNormals()) {
+			if(v.getX() == n.getX() &&
+					v.getY() == n.getY() &&
+					v.getZ() == n.getZ()) {
+				
+				isNew = false;
+				index = getNormals().indexOf(v);
+			}
+		}
+		if(isNew) {
+			getNormals().add(n);
+			nidx += 1;
+			index = nidx;
+		}
+		
+		return index;
 	}
 	
 	public int addTextureCoord(Vector2D vt) {
@@ -59,8 +89,8 @@ public class MaterialObj {
 		return texidx;
 	}
 	
-	public void addGroup(ObjGroup grp, int idx) {
-		getGroups().add(idx, grp);
+	public void addGroup(ObjGroup grp) {
+		getGroups().add(grp);
 		for(FaceEntry f : grp.getFaces()) {
 			if(f.getMtlName() != null && !f.getMtlName().isEmpty()) {
 				this.materialBinding.put(f, getMaterials().get(f.getMtlName()));
