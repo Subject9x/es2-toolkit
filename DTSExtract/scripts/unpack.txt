@@ -7,4 +7,5 @@ dba_file=<directory path to export to>
 palette=<file path and name to DPL>
 export_dir=<dir path to export to>
 scalar=1.0	//value 0.01 to any, will scale .obj
+applyTransform=<true|false> //used for hercs, applies bone transforms or not, false is useful for vertex editing.
 //index0Alpha=<true|false> - default to true

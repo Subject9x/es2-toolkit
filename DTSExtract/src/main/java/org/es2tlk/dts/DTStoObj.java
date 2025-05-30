@@ -38,11 +38,15 @@ public final class DTStoObj {
 	int[] uvTriIds = new int[] {3,2,1};
 	
 	double scalarFactor = 1.0;
+	boolean applyTransform = true;
 	
 	//ANShape only
 	private Map<Integer, Integer> animListRelationsMap = new HashMap<Integer, Integer>();
 	
-	public DTStoObj() {}
+	public DTStoObj(double scalar, boolean applyTransform) {
+		this.scalarFactor = scalar;
+		this.applyTransform = applyTransform;
+	}
 	
 	public List<MaterialObj> convertDTS_to_OBJ(DynamixThreeSpaceModel dts, DynamixBitmapArray texture, double scalar) {
 		

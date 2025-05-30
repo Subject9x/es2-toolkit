@@ -67,6 +67,7 @@ public class ExtractDTS {
 		String dbafilePath = null;
 		String exportDirPath = null;
 		double scalar = 0.1;
+		boolean applyTransform = true;
 		
 		boolean index0Alpha = true;	//default to true because DTS need it.
 		ArrayList<String> fileNames = new ArrayList<String>();
@@ -96,6 +97,9 @@ public class ExtractDTS {
 				}
 				else if(line.contains("scalar")) {
 					scalar = Double.valueOf(line.substring(line.lastIndexOf('=')+1));
+				}
+				else if(line.contains("applyTransform")) {
+					applyTransform = line.substring(line.lastIndexOf('=')+1).toLowerCase().equals("true") ? true : false;
 				}
 				else {
 					fileNames.add(line);
@@ -213,12 +217,12 @@ public class ExtractDTS {
 		}
 
 		for(String dtsFileName : fileNames) {
-			processDTSFile(dtsFileName, exportDir, dtsInputDir, dba, scalar);
+			processDTSFile(dtsFileName, exportDir, dtsInputDir, dba, scalar, applyTransform);
 		}
 		
 	}
 	
-	private static void processDTSFile(String fileName, File expDir, File srcDir, DynamixBitmapArray texture, double scalar) {
+	private static void processDTSFile(String fileName, File expDir, File srcDir, DynamixBitmapArray texture, double scalar, boolean applyTransform) {
 		
 		dtsTransformer.resetIndex();
 		
@@ -235,7 +239,7 @@ public class ExtractDTS {
 				return;
 			}
 			
-			DTStoObj toObj = new DTStoObj();
+			DTStoObj toObj = new DTStoObj(scalar, applyTransform);
 			List<MaterialObj> meshes = toObj.convertDTS_to_OBJ(dts, texture, scalar);
 			if(meshes.isEmpty()) {
 				return;
