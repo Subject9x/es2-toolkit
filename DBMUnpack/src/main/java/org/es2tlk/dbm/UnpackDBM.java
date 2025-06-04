@@ -1,31 +1,29 @@
-package org.es2tlk.dba;
+package org.es2tlk.dbm;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 import org.es2tlk.ScriptKeys;
 import org.hercworks.core.data.file.dyn.DynamixBitmap;
-import org.hercworks.core.data.file.dyn.DynamixBitmapArray;
 import org.hercworks.core.data.file.dyn.DynamixPalette;
-import org.hercworks.core.io.transform.common.DynamixBitmapArrayTransformer;
 import org.hercworks.core.io.transform.common.DynamixBitmapTransformer;
 import org.hercworks.core.io.transform.common.DynamixPaletteTransformer;
 import org.hercworks.core.io.write.DynFileWriter;
 import org.hercworks.voln.FileType;
 
-public class UnpackDBA {
+public class UnpackDBM {
 	
 	public static void main(String[] args) {
 		
 		boolean dplLoaded = false;
 		
-		System.out.println("1. fill out a copy of unpack.txt");
+		System.out.println("1. fill out a copy of dbm_out.txt");
 		System.out.println("2. enter path and file of unpack.txt to here");
 		System.out.print("unpack file= ");
 		BufferedReader consoleRead = new BufferedReader(new InputStreamReader(System.in));
@@ -53,10 +51,11 @@ public class UnpackDBA {
 			System.exit(1);
 		}
 		
-		String dbaFilePath = null;
 		String dbmDirPath = null;
 		String dplFilePath = null;
+		String pngFilePath = null;
 		boolean index0Alpha = false;
+		ArrayList<String> fileNames = new ArrayList<String>();
 		
 		try {
 			Scanner scanner = new Scanner(unpackFile);
@@ -69,35 +68,33 @@ public class UnpackDBA {
 				if(line.length() == 0) {
 					continue;
 				}
-				if(line.contains(ScriptKeys.DBAFILE.val())) {
-					dbaFilePath = line.substring(line.lastIndexOf('=')+1);
-				}
 				if(line.contains(ScriptKeys.DBMDir.val())) {
 					dbmDirPath = line.substring(line.lastIndexOf('=')+1);	
 				}
-				if(line.contains(ScriptKeys.Palette.val())) {
+				else if(line.contains(ScriptKeys.Palette.val())) {
 					dplFilePath = line.substring(line.lastIndexOf('=')+1);
 				}
-				if(line.contains(ScriptKeys.Indx0Alpha.val())) {
+				else if(line.contains(ScriptKeys.PNGDir.val())) {
+					pngFilePath = line.substring(line.lastIndexOf('=')+1);
+				}
+				else if(line.contains(ScriptKeys.Indx0Alpha.val())) {
 					index0Alpha = line.substring(line.lastIndexOf('=')+1).toLowerCase().equals("true") ? true : false;
 				}
+				else {
+					fileNames.add(line);
+				}
+				
 			}
 			scanner.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			System.out.print(e.getMessage());
 			System.exit(1);
-		}
+		}	
 		
-		System.out.println(ScriptKeys.DBAFILE.val() + "=" + dbaFilePath);
 		System.out.println(ScriptKeys.DBMDir.val() + "=" + dbmDirPath);
 		if(dplFilePath != null && !dplFilePath.equals("")) {
 			System.out.println(ScriptKeys.Palette.val() + "=" + dplFilePath);	
-		}
-		
-		if(dbaFilePath == null) {
-			System.out.println("--->ERROR! " + ScriptKeys.DBAFILE.val() + " parameter was empty.");
-			System.exit(2);
 		}
 		
 		if(dbmDirPath == null) {
@@ -105,19 +102,22 @@ public class UnpackDBA {
 			System.exit(2);
 		}
 		
-		File dbaFile = new File(dbaFilePath);
-		if(!dbaFile.exists()) {
-			System.out.println("--->ERROR! file/directory not found [" + dbaFilePath + "]");
-			System.exit(1);
-		}
-		
-		File dbmOutputDir = new File(dbmDirPath);
-		if(!dbmOutputDir.exists()) {
-			if(!dbmOutputDir.mkdir()) {
+		File dbmInputDir = new File(dbmDirPath);
+		if(!dbmInputDir.exists()) {
+			if(!dbmInputDir.mkdir()) {
 				System.out.println("--->ERROR! unable to make output directory at [" + dbmDirPath + "]");
 				System.exit(3);
 			}
 		}
+		
+		File pngOutputDir = new File(pngFilePath);
+		if(!pngOutputDir.exists()) {
+			if(!pngOutputDir.mkdir()) {
+				System.out.println("--->ERROR! unable to make output directory at [" + pngFilePath + "]");
+				System.exit(3);
+			}
+		}
+		
 		
 		DynamixPalette dpl = null;
 		if(dplFilePath != null && dplFilePath.length() != 0) {
@@ -138,10 +138,10 @@ public class UnpackDBA {
 					}
 				} catch (FileNotFoundException e) {
 					dplLoaded = false;
-					System.out.println("--->Warn! ");
+					System.err.println(e.getMessage());
 				} catch (IOException e) {
 					dplLoaded = false;
-					e.printStackTrace();
+					System.err.println(e.getMessage());
 				}
 			}
 		}
@@ -149,71 +149,58 @@ public class UnpackDBA {
 			dplLoaded = false;
 		}
 		
-		FileType dbaExt = FileType.DBA;
-		if(dbaFilePath.toLowerCase().contains(FileType.DB0.val())) {
-			dbaExt = FileType.DB0;
+		if(!dplLoaded) {
+			System.out.println("--->ERROR! problem parsing DPL palette file [" + dplFilePath + "]");
+			System.exit(3);
 		}
-		else if(dbaFilePath.toLowerCase().contains(FileType.DB1.val())) {
-			dbaExt = FileType.DB1;
+	
+		if(fileNames.isEmpty() || fileNames.size() == 0) {
+			System.out.println("--->ERROR! no DBM files found in unpack file.");
+			System.exit(3);
 		}
-		else if(dbaFilePath.toLowerCase().contains(FileType.DB2.val())) {
-			dbaExt = FileType.DB2;
-		}
-		else if(dbaFilePath.toLowerCase().contains(FileType.HB0.val())) {
-			dbaExt = FileType.HB0;
-		}
-		else if(dbaFilePath.toLowerCase().contains(FileType.HB1.val())) {
-			dbaExt = FileType.HB1;
-		}
-		else if(dbaFilePath.toLowerCase().contains(FileType.HB2.val())) {
-			dbaExt = FileType.HB2;
-		}
-		
-		String dbaName = dbaFilePath.toLowerCase().substring(dbaFilePath.lastIndexOf('/')+1, dbaFilePath.toLowerCase().lastIndexOf("."+dbaExt.val()));
-		int frameCount = 0;
 
-		System.out.println("---Begin unpack---");
-		try {
-			FileInputStream fizz = new FileInputStream(new File(dbaFilePath));
-			DynamixBitmapArrayTransformer dbaTransform = new DynamixBitmapArrayTransformer();
-			DynamixBitmapArray dba = (DynamixBitmapArray) dbaTransform.bytesToObject(fizz.readAllBytes());
-			
-			fizz.close();
-			
-			if(dba == null || dba.getRawBytes() == null || dba.getRawBytes().length == 0) {
-				System.out.println("--->ERROR! problem parsing .DBA file.");
-				System.exit(4);
+		DynamixBitmapTransformer dbmTransform = new DynamixBitmapTransformer();
+		
+		for(String name : fileNames) {
+			if(!name.toLowerCase().contains(FileType.DBM.val().toLowerCase())) {
+				name = name.toLowerCase() + "." + FileType.DBM.val().toLowerCase();
 			}
 			
-			for(DynamixBitmap dbm : dba.getImages()) {
-				dbm.setFileName(dbaName + "_" + frameCount);
+			File dbmInputFile = new File(dbmDirPath + name);
+			if(!dbmInputFile.exists() || !dbmInputFile.isFile()) {
+				System.out.println("--->ERROR! DBM file not found [" + dbmDirPath + name + "]" );
+				continue;
+			}
+			
+			try {
+				FileInputStream fizz = new FileInputStream(dbmInputFile);
+				dbmTransform.resetIndex();
+				DynamixBitmap dbm = (DynamixBitmap)dbmTransform.bytesToObject(fizz.readAllBytes());
+				fizz.close();
 				
-				String path = dbmOutputDir + File.separator;
-				String dbmPath = path + dbm.getFileName().toUpperCase() + "." + FileType.DBM.val().toUpperCase();
+				dbm.setFileName(name);
+				dbm.setFileName(dbm.originNameNoExt());
 				
-				File dbmFile = new File(dbmPath);
-				FileOutputStream fileOut = new FileOutputStream(dbmFile);
-				
-				DynamixBitmapTransformer dbmTransform = new DynamixBitmapTransformer();
-				
-				fileOut.write(dbmTransform.objectToBytes(dbm));
-				fileOut.close();
-				System.out.println(path);
-				
-				if(dplLoaded) {
-					DynFileWriter.writeDBMToFile(dbm, index0Alpha,dpl, path);
+				if(dbm == null || dbm.getRawBytes() == null || dbm.getRawBytes().length <= 0) {
+					System.out.println("--->ERROR! problem parsing dbm [" + name + "] file.");
 				}
 				else {
-					DynFileWriter.writeDBMToFileNoPalette(dbm, path);
+					DynFileWriter.writeDBMToFile(dbm, index0Alpha, dpl, pngFilePath);
 				}
-				
-				frameCount++;
+			} catch (FileNotFoundException e) {
+				System.err.println(e.getMessage());
+				continue;
+			} catch (ClassCastException e) {
+				System.err.println(e.getMessage());
+				continue;
+			} catch (IOException e) {
+				System.err.println(e.getMessage());
+				continue;
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println(e.getMessage());
-			System.exit(1);
+			
 		}
-		System.out.println("---Unpack complete---");
+		
+		System.out.println("---Conversion complete---");
 	}
+
 }

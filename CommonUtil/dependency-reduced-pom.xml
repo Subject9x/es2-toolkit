@@ -6,50 +6,24 @@
     <version>0.2.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.es2tlk</groupId>
-  <artifactId>ES2ModCompiler</artifactId>
-  <name>ES2ModCompiler</name>
+  <artifactId>CommonUtil</artifactId>
+  <name>CommonUtil</name>
   <version>0.0.1</version>
-  <description>creates a mod dir, sets up folders, scripts, and copies out vol files to begin modding.</description>
+  <description>collection of config and utils for other modules.</description>
   <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <artifactId>maven-resources-plugin</artifactId>
-          <version>3.3.1</version>
-        </plugin>
-      </plugins>
-    </pluginManagement>
     <plugins>
       <plugin>
         <artifactId>maven-clean-plugin</artifactId>
       </plugin>
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
+        <version>3.3.1</version>
         <executions>
           <execution>
             <phase>generate-test-resources</phase>
             <configuration>
               <outputDirectory>${basedir}/target/classes</outputDirectory>
               <resources />
-            </configuration>
-          </execution>
-          <execution>
-            <id>copy-resources-1</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${basedir}/target/scripts</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>scripts</directory>
-                  <includes>
-                    <include>compile_shell.txt</include>
-                  </includes>
-                </resource>
-              </resources>
             </configuration>
           </execution>
         </executions>
@@ -115,11 +89,6 @@
                   </excludes>
                 </filter>
               </filters>
-              <transformers>
-                <transformer>
-                  <mainClass>org.es2tlk.manager.MainEntry</mainClass>
-                </transformer>
-              </transformers>
             </configuration>
           </execution>
         </executions>

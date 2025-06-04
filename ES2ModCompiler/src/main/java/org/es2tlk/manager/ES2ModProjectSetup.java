@@ -22,6 +22,7 @@ import org.hercworks.core.data.file.dat.shell.RprHerc;
 import org.hercworks.core.data.file.dat.shell.TrainingHercs;
 import org.hercworks.core.data.file.dat.shell.WeaponsDat;
 import org.hercworks.core.data.file.dat.sim.BeamData;
+import org.hercworks.core.data.file.dat.sim.DebrisHerc;
 import org.hercworks.core.data.file.dat.sim.HercSimDat;
 import org.hercworks.core.data.file.dat.sim.MissileDatFile;
 import org.hercworks.core.data.file.dat.sim.ProjectileData;
@@ -34,6 +35,7 @@ import org.hercworks.core.data.struct.herc.HercLUT;
 import org.hercworks.core.io.read.VolFileReader;
 import org.hercworks.core.io.transform.ThreeSpaceByteTransformer;
 import org.hercworks.core.io.transform.dbsim.BeamDatFileTransformer;
+import org.hercworks.core.io.transform.dbsim.DebrisHercTransformer;
 import org.hercworks.core.io.transform.dbsim.FlightModelTransformer;
 import org.hercworks.core.io.transform.dbsim.GunLayoutTransformer;
 import org.hercworks.core.io.transform.dbsim.HercDamageFileTransformer;
@@ -64,6 +66,7 @@ import org.hercworks.transfer.dto.file.shell.StartHercsDTO;
 import org.hercworks.transfer.dto.file.shell.TrainingHercsDTO;
 import org.hercworks.transfer.dto.file.shell.WeaponsDatDTO;
 import org.hercworks.transfer.dto.file.sim.BeamDatDTO;
+import org.hercworks.transfer.dto.file.sim.DebrisHercDTO;
 import org.hercworks.transfer.dto.file.sim.FlightModelDTO;
 import org.hercworks.transfer.dto.file.sim.GunLayoutDTO;
 import org.hercworks.transfer.dto.file.sim.HercDmgDTO;
@@ -73,6 +76,7 @@ import org.hercworks.transfer.dto.file.sim.PaperDollDTO;
 import org.hercworks.transfer.dto.file.sim.ProjectileDataDTO;
 import org.hercworks.transfer.dto.file.sim.WpnPDGDTO;
 import org.hercworks.transfer.svc.impl.dbsim.BeamDatDTOServiceImpl;
+import org.hercworks.transfer.svc.impl.dbsim.DebrisHercDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.FlightModelDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.GunLayoutDTOServiceImpl;
 import org.hercworks.transfer.svc.impl.dbsim.HercSimDataDTOServiceImpl;
@@ -350,13 +354,18 @@ public final class ES2ModProjectSetup {
 					HercSimDat simDat = (HercSimDat)transformer.bytesToObject(data.getRawBytes());
 					dtoExport = (HercSimDatDTO)(new HercSimDataDTOServiceImpl().convertToDTO(simDat));
 				}
-				
 				else if(data.getFileName().toLowerCase().contains("bullets") 
 						|| data.getFileName().toLowerCase().contains("rockets")) {
 					transformer = new MissileDatFileTransformer();
 					MissileDatFile missiles = (MissileDatFile)transformer.bytesToObject(data.getRawBytes());
 					missiles.setFileName(data.originNameNoExt());
 					dtoExport = (MissileDatDTO)(new MissileDatDTOServiceImpl().convertToDTO(missiles));
+				}
+				else if(data.getFileName().toLowerCase().contains("_deb")) {
+					transformer = new DebrisHercTransformer();
+					DebrisHerc debris = (DebrisHerc)transformer.bytesToObject(data.getRawBytes());
+					debris.setFileName(data.originNameNoExt());
+					dtoExport = (DebrisHercDTO)(new DebrisHercDTOServiceImpl().convertToDTO(debris));
 				}
 				
 				break;

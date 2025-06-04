@@ -1,18 +1,15 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>org.es2tools</groupId>
-		<artifactId>es2kit</artifactId>
-		<version>0.2.0</version>
-	</parent>
-	<artifactId>CompileDBA</artifactId>
-	<name>CompileDBA</name>
-	<description>Compile an existing list of DBM (Dynamix BitMap) files to a DBA(Dynamix Bitmap Array)</description>
- 	<version>0.0.3</version>
-
-
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.es2tools</groupId>
+    <artifactId>es2kit</artifactId>
+    <version>0.2.0</version>
+  </parent>
+  <artifactId>DBMUnpack</artifactId>
+  <name>DBM Unpack</name>
+  <description>unpacks raw / standalone Dynamix Bitmap image files to png</description>
+  <version>0.0.3</version>
+  
 	<dependencies>
 		<dependency>
 			<groupId>org.es2tools</groupId>
@@ -30,25 +27,9 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		<dependency>
-			<groupId>org.es2tools</groupId>
-			<artifactId>DBMconvert</artifactId>
-			<version>0.2.0</version>
-			<scope>compile</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>org.hercworks</groupId>
-					<artifactId>ES2Core</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.hercworks</groupId>
-					<artifactId>ES2TransferApi</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
 	</dependencies>
 	
-	<build>
+  	<build>
 		<plugins>
 			<!-- clean lifecycle, see
 			https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
@@ -142,7 +123,7 @@
 							</filters>
 							<transformers>
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>org.es2tlk.dba.CompileDBA</mainClass>
+									<mainClass>org.es2tlk.dba.UnpackDBA</mainClass>
 								</transformer>
 							</transformers>
 						</configuration>
@@ -151,4 +132,5 @@
 			</plugin>
 		</plugins>
 	</build>
+
 </project>

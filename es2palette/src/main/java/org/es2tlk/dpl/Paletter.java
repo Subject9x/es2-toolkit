@@ -2,8 +2,6 @@ package org.es2tlk.dpl;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
-import java.awt.image.IndexColorModel;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -12,34 +10,34 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
+import org.es2tlk.CmdArgs;
 import org.hercworks.core.data.file.dyn.DynamixPalette;
 import org.hercworks.core.data.struct.ColorBytes;
 import org.hercworks.core.io.transform.common.DynamixPaletteTransformer;
 
 public class Paletter {
-
-	private static String argExport = "-e";
-	private static String argImport = "-i";
-	private static String argDir = "-d";
-	private static String argGimp = "-gpl";	//export to gimp GPL
 	
 	public static void main(String[] args) {
 		
 		String exportDir = null;
 		String exportDplPath = null;
 		boolean exportGPL = false;
+		boolean index0Alpha = false;
 		
 		for(int i = 0; i < args.length; i++) {
 			String arg = args[i];
 			
-			if(arg.toLowerCase().equals(argDir)) {
+			if(arg.toLowerCase().equals(CmdArgs.Dir.val())) {
 				exportDir = loadArg(args, i+1);
 			}
-			else if(arg.toLowerCase().equals(argExport)) {
+			else if(arg.toLowerCase().equals(CmdArgs.File.val())) {
 				exportDplPath = loadArg(args, i+1);
 			}
-			else if(arg.toLowerCase().equals(argGimp)) {
+			else if(arg.toLowerCase().equals(CmdArgs.GPLpalette.val())) {
 				exportGPL = true;
+			}
+			else if(arg.toLowerCase().equals(CmdArgs.Alpha.val())) {
+				index0Alpha = true;
 			}
 		}
 		
@@ -85,17 +83,21 @@ public class Paletter {
 		
 		dpl.setFileName(dplFile.getName().substring(0, dplFile.getName().lastIndexOf('.')));
 		
+		BufferedImage paletteImage = generatePaletteImage(dpl, index0Alpha);
 		
-		BufferedImage paletteImage = generatePaletteImage(dpl);
-		
-		boolean writeIamge = false;
+		boolean writeImage = false;
 		
 		File file = new File(exportDir + File.separator + dpl.getFileName() + ".png");
 		try {
-			writeIamge = ImageIO.write(paletteImage, "png", file);
-		} catch (IOException e) {
+			writeImage = ImageIO.write(paletteImage, "png", file);
+		} 
+		catch (IOException e) {
 			System.out.println(e.getMessage());
 			System.exit(-1);
+		}
+		
+		if(!writeImage) {
+			System.out.println("ERROR: failed to write palette image.");
 		}
 
 		//Generate a raw text file for review.
@@ -115,8 +117,13 @@ public class Paletter {
 			writer.write("#\n");
 			
 			for(Integer idx : dpl.getColors().keySet()) {
-				ColorBytes clrByt = dpl.getColors().get(idx);
-				
+				ColorBytes clrByt = null;
+				if(idx == 0 && index0Alpha) {
+					clrByt = dpl.getIndex0AlphaKey();
+				}
+				else{
+					clrByt = dpl.getColors().get(idx);
+				}
 				
 				StringBuilder row = new StringBuilder();
 				row.append("#");
@@ -138,9 +145,9 @@ public class Paletter {
 			writer.close();
 			
 		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+			System.err.println("---> ERROR " + e.getLocalizedMessage());
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.err.println("---> ERROR " + e.getLocalizedMessage());
 		}
 		
 		//export GIMP GPL Palette
@@ -160,7 +167,14 @@ public class Paletter {
 				writer.write("#\n");
 				
 				for(Integer idx : dpl.getColors().keySet()) {
-					ColorBytes clrByt = dpl.getColors().get(idx);
+					ColorBytes clrByt = null;
+					if(idx == 0 && index0Alpha) {
+						clrByt = dpl.getIndex0AlphaKey();
+					}
+					else{
+						clrByt = dpl.getColors().get(idx);
+					}
+					
 					StringBuilder row = new StringBuilder();
 					row = colorToRow(row, clrByt.getJavaColor());
 					row.append(" #");
@@ -172,26 +186,27 @@ public class Paletter {
 				writer.close();
 				
 			} catch (FileNotFoundException e) {
-				e.printStackTrace();
+				System.err.println("---> ERROR " + e.getLocalizedMessage());
 			} catch (IOException e) {
-				e.printStackTrace();
+				System.err.println("---> ERROR " + e.getLocalizedMessage());
 			}
 		}
+		System.out.println("-- Write complete --");
 	}
 	
-	private static BufferedImage generatePaletteImage(DynamixPalette dpl) {
+	private static BufferedImage generatePaletteImage(DynamixPalette dpl, boolean isIndex0Alpha) {
 		
 		int swatchW = 16; 
 		int swatchH = 16;
 		
-		IndexColorModel colorIndex = new IndexColorModel(8,
-				256,
-				dpl.toIntColorMap(),
-				0,
-				false,
-				-1,
-				DataBuffer.TYPE_BYTE
-		);
+//		IndexColorModel colorIndex = new IndexColorModel(8,
+//				256,
+//				dpl.toIntColorMap(),
+//				0,
+//				false,
+//				-1,
+//				DataBuffer.TYPE_BYTE
+//		);
 		
 		BufferedImage paletteImage = new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB);
 		
@@ -200,13 +215,21 @@ public class Paletter {
 		
 		int row = 0;
 		int col = 0;
-		for(int shade : dpl.getColors().keySet()) {
+		for(int index : dpl.getColors().keySet()) {
 			for(int y=0; y < swatchH; y++) {
 				for(int x=0; x < swatchW; x++) {
+					int colorVal = 0;
+					if(index == 0 && isIndex0Alpha) {
+						colorVal = dpl.getIndex0AlphaKey().getJavaColor().getRGB();
+					}
+					else{
+						colorVal = dpl.getColors().get(index).getJavaColor().getRGB();
+					}
+					
 					paletteImage.setRGB( 
 								x + (col * swatchW), 
 								y + (row * swatchH),
-								dpl.getColors().get(shade).getJavaColor().getRGB());
+								colorVal);
 				}
 			}
 			if(col < grdW) {
@@ -217,12 +240,10 @@ public class Paletter {
 				if(row < grdH) {
 					row++;	
 				}
-				
 			}
 		}
 		
 		return paletteImage;
-		
 	}
 	
 	

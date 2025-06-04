@@ -3,12 +3,13 @@
   <parent>
     <artifactId>es2kit</artifactId>
     <groupId>org.es2tools</groupId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>DBMconvert</artifactId>
   <name>DBMConverter</name>
-  <description>converts</description>
+  <version>0.0.3</version>
+  <description>converts png files to standalone DBMs with a supplied palette.</description>
   <build>
     <plugins>
       <plugin>
