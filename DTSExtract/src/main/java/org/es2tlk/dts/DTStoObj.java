@@ -153,7 +153,7 @@ public final class DTStoObj {
 	private void processRegularFace(TSObject root, TSGroup tsg, TSPoly poly, ObjGroup groupMesh, MaterialObj trgMesh, Vector3D[] points, int[] pointIndex, DynamixBitmapArray texture) {
 		
 		Vector3D offset = null;
-		if(root instanceof ANShape) {
+		if(root instanceof ANShape && applyTransform) {
 			offset = calcOffset((ANShape)root, tsg, poly);
 		}
 		
@@ -196,7 +196,7 @@ public final class DTStoObj {
 	private void triangulatePolygon(TSObject root, TSGroup tsg, TSPoly poly, ObjGroup groupMesh, MaterialObj trgMesh, Vector3D[] points, int[] pointIndex, DynamixBitmapArray texture){
 		
 		Vector3D offset = null;
-		if(root instanceof ANShape) {
+		if(root instanceof ANShape && applyTransform) {
 			offset = calcOffset((ANShape)root, tsg, poly);
 		}
 		
@@ -404,13 +404,5 @@ public final class DTStoObj {
 			}
 			return v1;
 		}
-	}
-	
-	public static Color valueOf(int color) {
-	    float r = ((color >> 16) & 0xff) / 127;
-	    float g = ((color >>  8) & 0xff) / 127;
-	    float b = ((color      ) & 0xff) / 127;
-//	    float a = ((color >> 24) & 0xff);
-	    return new Color(r, g ,b);
 	}
 }
