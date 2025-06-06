@@ -9,11 +9,11 @@ import java.util.Map;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
-import org.es2tlk.dts.model.FaceEntry;
-import org.es2tlk.dts.model.Material;
-import org.es2tlk.dts.model.Material.Keys;
-import org.es2tlk.dts.model.MaterialObj;
-import org.es2tlk.dts.model.ObjGroup;
+import org.es2tlk.dts.obj.FaceEntry;
+import org.es2tlk.dts.obj.Material;
+import org.es2tlk.dts.obj.MaterialObj;
+import org.es2tlk.dts.obj.ObjGroup;
+import org.es2tlk.dts.obj.Material.Keys;
 import org.hercworks.core.data.file.dts.DefaultShapeColors;
 import org.hercworks.core.data.file.dts.TSGroup;
 import org.hercworks.core.data.file.dts.TSObject;

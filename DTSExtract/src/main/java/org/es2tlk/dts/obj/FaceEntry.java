@@ -1,4 +1,4 @@
-package org.es2tlk.dts.model;
+package org.es2tlk.dts.obj;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 

@@ -14,11 +14,11 @@ import java.util.Scanner;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.es2tlk.ScriptKeys;
-import org.es2tlk.dts.model.FaceEntry;
-import org.es2tlk.dts.model.Material;
-import org.es2tlk.dts.model.Material.Keys;
-import org.es2tlk.dts.model.MaterialObj;
-import org.es2tlk.dts.model.ObjGroup;
+import org.es2tlk.dts.obj.FaceEntry;
+import org.es2tlk.dts.obj.Material;
+import org.es2tlk.dts.obj.Material.Keys;
+import org.es2tlk.dts.obj.MaterialObj;
+import org.es2tlk.dts.obj.ObjGroup;
 import org.hercworks.core.data.file.dts.TSObject;
 import org.hercworks.core.data.file.dyn.DynamixBitmapArray;
 import org.hercworks.core.data.file.dyn.DynamixPalette;
@@ -26,6 +26,11 @@ import org.hercworks.core.data.file.dyn.DynamixThreeSpaceModel;
 import org.hercworks.core.io.transform.common.DynamixBitmapArrayTransformer;
 import org.hercworks.core.io.transform.common.DynamixPaletteTransformer;
 import org.hercworks.core.io.transform.dbsim.DTSModelTransformer;
+import org.hercworks.transfer.dto.file.sim.dts.TSObjectDTO;
+import org.hercworks.transfer.svc.impl.dbsim.DTSServiceImpl;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 public class ExtractDTS {
 
@@ -104,7 +109,6 @@ public class ExtractDTS {
 				else {
 					fileNames.add(line);
 				}
-				
 			}
 			scanner.close();
 		} catch (FileNotFoundException e) {
@@ -364,12 +368,19 @@ public class ExtractDTS {
 		}
 	}
 	
-	private static void writeRawJson(TSObject dts, File exportDir, String fileName) {
+	private static void writeRawJson(TSObject dtsObject, File exportDir, String fileName) {
 		
 		File jsonFile = new File(exportDir.getAbsolutePath() + File.separator + fileName + ".json");	
 		try(FileWriter fileWriter = new FileWriter(jsonFile)) {
-			fileWriter.write(dts.toString());
-			fileWriter.close();
+			
+			DTSServiceImpl dtoSvc = new DTSServiceImpl();
+			TSObjectDTO dto = dtoSvc.convertSingleTSObject(dtsObject);
+			
+			ObjectMapper mapper = new ObjectMapper();
+			mapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+			mapper.writeValue(jsonFile, dto);
+			
+
 		} catch (IOException e) {
 		    System.err.println(e.getLocalizedMessage());
 		}

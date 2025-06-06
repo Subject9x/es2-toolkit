@@ -1,4 +1,4 @@
-package org.es2tlk.dts.model;
+package org.es2tlk.dts.obj;
 
 import java.util.LinkedHashMap;
 
