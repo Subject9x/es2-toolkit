@@ -7,7 +7,6 @@ import java.util.Map;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
-import org.erenyenigul.obj.elements.Face;
 
 /**
  * Attempt at an OBJ model object as defined by the Wavefront.java library....
