@@ -2,10 +2,14 @@
 //ThreeSpace 2.0 / Earthsiege 2 version.
 //
 // please end paths with ending slash /
-dts_dir=<dir path to dts files>
-dba_file=<directory path to export to>
-palette=<file path and name to DPL>
+dts_dir=<dir path to .DTS files>
+dba_file=<directory path to export to with trailing />
+palette=<file path and name to .DPL>
 export_dir=<dir path to export to>
-scalar=1.0	//value 0.01 to any, will scale .obj
+scalar=<0.01 to X>	//value 0.01 to any, will scale .obj
 applyTransform=<true|false> //used for hercs, applies bone transforms or not, false is useful for vertex editing.
 //index0Alpha=<true|false> - default to true
+
+<list of .DTS files here, 1 per line>
+EXAMPLE.DTS
+EXAMPLE2.DTS

@@ -1,0 +1,11 @@
+//Dynamix Bitmap unpacker
+//ThreeSpace 2.0 / Earthsiege 2 version.
+//
+// please end paths with ending slash.
+dbm_dir=<full path to valid .DBM file>
+png_dir=<full path to export directory with trailing />
+palette=<full path to valid .DPL file>
+
+<list file names with extensions, 1 per lin>
+EXAMPLE1.DBM
+EXAMPLE2.DBM
