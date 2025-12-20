@@ -9,6 +9,7 @@ public final class CmdUtil {
 	public static String keyDBMDir = "dbm_dir";
 	public static String keyPalette = "palette";
 	public static String keyIndex0Alpha = "index0Alpha";
+	public static String keyHeightmap = "heightmap";
 	
 	private CmdUtil() {}
 }

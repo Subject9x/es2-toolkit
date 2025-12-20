@@ -6,3 +6,4 @@ dba_file=<file path and name of DBA>
 dbm_dir=<directory path to export to>
 palette=<OPTIONAL path to .DPL file, will then generate .png files>
 index0Alpha=<true|false>
+heightmap=<true|false>

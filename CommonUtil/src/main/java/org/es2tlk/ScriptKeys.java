@@ -12,6 +12,7 @@ public enum ScriptKeys {
 	Palette("palette"),
 	PNGDir("png_dir"),
 	Indx0Alpha("index0alpha"),
+	Heightmap("heightmap"),
 	IMGMode("mode"),
 	;
 	

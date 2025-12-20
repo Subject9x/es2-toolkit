@@ -57,6 +57,7 @@ public class UnpackDBA {
 		String dbmDirPath = null;
 		String dplFilePath = null;
 		boolean index0Alpha = false;
+		boolean heightmap = false;
 		
 		try {
 			Scanner scanner = new Scanner(unpackFile);
@@ -80,6 +81,9 @@ public class UnpackDBA {
 				}
 				if(line.contains(ScriptKeys.Indx0Alpha.val())) {
 					index0Alpha = line.substring(line.lastIndexOf('=')+1).toLowerCase().equals("true") ? true : false;
+				}
+				if(line.contains(ScriptKeys.Heightmap.val())) {
+					heightmap =  line.substring(line.lastIndexOf('=')+1).toLowerCase().equals("true") ? true : false;
 				}
 			}
 			scanner.close();
@@ -200,11 +204,16 @@ public class UnpackDBA {
 				fileOut.close();
 				System.out.println(path);
 				
-				if(dplLoaded) {
-					DynFileWriter.writeDBMToFile(dbm, index0Alpha,dpl, path);
+				if(heightmap) {
+					DynFileWriter.writeDBMToHeightmap(dbm, dplFilePath);
 				}
 				else {
-					DynFileWriter.writeDBMToFileNoPalette(dbm, path);
+					if(dplLoaded) {
+						DynFileWriter.writeDBMToFile(dbm, index0Alpha, dpl, path);
+					}
+					else {
+						DynFileWriter.writeDBMToFileNoPalette(dbm, path);
+					}
 				}
 				
 				frameCount++;
