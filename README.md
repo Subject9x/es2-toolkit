@@ -1,3 +1,6 @@
+# archiving 10/08/2026
+anything this project does is now done better by purchasing an AI subscription and dumping this code into it.
+
 # es2-toolkit
 refined tools for modifying and compiling associated ES2 game  files.
 
